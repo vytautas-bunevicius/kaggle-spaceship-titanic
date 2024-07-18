@@ -713,162 +713,6 @@ def plot_feature_importances(
         fig.write_image(save_path)
 
 
-def plot_missing_values_bar(
-    df, title="Missing Values in Training Data", save_path=None
-):
-    """
-    Creates a refined bar chart of missing value percentages using Plotly,
-    maintaining the existing background color and improving axis layout.
-
-    Args:
-        df (pd.DataFrame): The DataFrame to visualize.
-        title (str): The title of the plot.
-
-    Returns:
-        None. Displays the plot.
-    """
-    missing_percentages = df.isnull().mean().sort_values(descending=True) * 100
-
-    fig = go.Figure()
-
-    fig.add_trace(
-        go.Bar(
-            y=missing_percentages.index,
-            x=missing_percentages.values,
-            orientation="h",
-            marker_color=PRIMARY_COLORS[1],
-            text=[f"{value:.2f}%" for value in missing_percentages.values],
-            textposition="outside",
-            textfont=dict(family="Styrene A", size=12, color=PRIMARY_COLORS[3]),
-        )
-    )
-
-    fig.update_layout(
-        title={
-            "text": title,
-            "y": 0.95,
-            "x": 0.5,
-            "xanchor": "center",
-            "yanchor": "top",
-            "font": {"family": "Styrene B", "size": 24, "color": PRIMARY_COLORS[3]},
-        },
-        xaxis_title="Percentage of Missing Values",
-        yaxis_title="Features",
-        height=600,
-        width=900,
-        plot_bgcolor=BACKGROUND_COLOR,
-        paper_bgcolor=BACKGROUND_COLOR,
-        font={"family": "Styrene A", "size": 14, "color": PRIMARY_COLORS[3]},
-        xaxis=dict(
-            tickformat=".2f",
-            ticksuffix="%",
-            range=[0, max(missing_percentages.values) * 1.1],
-            showgrid=True,
-            gridcolor=SECONDARY_COLORS[4],
-            gridwidth=1,
-            zeroline=False,
-            tickfont=dict(size=12),
-        ),
-        yaxis=dict(showgrid=False, zeroline=False, tickfont=dict(size=12)),
-        bargap=0.2,
-        margin=dict(l=150, r=50, t=80, b=50),
-    )
-
-    # Add subtle alternating background for rows
-    for i, y in enumerate(range(len(missing_percentages))):
-        color = SECONDARY_COLORS[5] if i % 2 == 0 else SECONDARY_COLORS[6]
-        fig.add_shape(
-            type="rect",
-            x0=0,
-            y0=y - 0.4,
-            x1=1,
-            y1=y + 0.4,
-            xref="paper",
-            yref="y",
-            fillcolor=color,
-            opacity=0.2,
-            layer="below",
-            line_width=0,
-        )
-
-    fig.show()
-
-    if save_path:
-        fig.write_image(save_path)
-
-
-def plot_missing_values(
-    df, title="Missing Values in Training Data", save_path=None, top_n=None
-):
-    """
-    Creates a simple and reliable horizontal bar chart of missing value percentages using Plotly.
-
-    Args:
-        df (pd.DataFrame): The DataFrame to visualize.
-        title (str): The title of the plot.
-        save_path (str, optional): Path to save the plot image.
-        top_n (int, optional): Number of top features to display. If None, all features are shown.
-
-    Returns:
-        None. Displays the plot and optionally saves it.
-    """
-    missing_percentages = df.isnull().mean().sort_values(ascending=True) * 100
-
-    if top_n:
-        missing_percentages = missing_percentages.tail(top_n)
-
-    fig = go.Figure()
-
-    fig.add_trace(
-        go.Bar(
-            y=missing_percentages.index,
-            x=missing_percentages.values,
-            orientation="h",
-            marker_color=PRIMARY_COLORS[0],
-            text=[f"{value:.2f}%" for value in missing_percentages.values],
-            textposition="outside",
-            textfont=dict(family="Styrene A", size=12, color=PRIMARY_COLORS[3]),
-        )
-    )
-
-    fig.update_layout(
-        title={
-            "text": title,
-            "y": 0.95,
-            "x": 0.5,
-            "xanchor": "center",
-            "yanchor": "top",
-            "font": {"family": "Styrene B", "size": 24, "color": "#191919"},
-        },
-        height=max(500, 50 + 25 * len(missing_percentages)),
-        width=800,
-        plot_bgcolor=BACKGROUND_COLOR,
-        paper_bgcolor=BACKGROUND_COLOR,
-        font={"family": "Styrene A", "size": 14, "color": "#191919"},
-        xaxis=dict(
-            title="Percentage of Missing Values",
-            showgrid=True,
-            gridcolor=SECONDARY_COLORS[5],
-            zeroline=True,
-            zerolinecolor=SECONDARY_COLORS[4],
-            range=[0, max(missing_percentages.values) * 1.1],
-            tickformat=".1f",
-            ticksuffix="%",
-        ),
-        yaxis=dict(
-            title="Features",
-            showgrid=False,
-            zeroline=False,
-        ),
-        margin=dict(l=150, r=50, t=80, b=50),
-    )
-
-    fig.show()
-
-    if save_path:
-        fig.write_image(save_path)
-
-
 def plot_distribution_comparison(
     df_before, df_after, features, title="Distribution Comparison", save_path=None
 ):
@@ -930,3 +774,26 @@ def plot_distribution_comparison(
 
     if save_path:
         fig.write_image(save_path)
+
+
+def handle_missing_values(data, threshold=0.3):
+    """
+    This function handles missing values in a given DataFrame by dropping columns and rows.
+
+    Parameters:
+    data (pandas.DataFrame): The input DataFrame with missing values.
+    threshold (float, optional): The threshold for determining columns to drop. Default is 0.3.
+
+    Returns:
+    pandas.DataFrame: The cleaned DataFrame with missing values handled.
+    """
+    columns_to_drop = data.columns[data.isnull().mean() > threshold]
+    data_cleaned = data.drop(columns=columns_to_drop)
+    print(
+        f"Columns dropped due to >{threshold*100}% missing values: {list(columns_to_drop)}"
+    )
+
+    data_cleaned = data_cleaned.dropna()
+    print(f"Rows removed due to missing values: {len(data) - len(data_cleaned)}")
+
+    return data_cleaned
