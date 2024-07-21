@@ -8030,6 +8030,16 @@ VRDeck        6606.0  303.780048  1127.142166  0.0   0.0   0.0  52.00  20336.0
 <p><strong>Spending features (RoomService, FoodCourt, ShoppingMall, Spa, VRDeck):</strong></p>
 <p>All have minimums of 0 and high maximum values, indicating wide ranges in spending. The means are much higher than the medians (which are all 0), suggesting highly skewed distributions. Large standard deviations compared to means indicate high variability in spending patterns.</p>
 <p><strong>These statistics suggest we may need to consider log transformations or other techniques to handle the skewed spending data in our analysis. FoodCourt shows the highest mean spending and maximum value among the features.</strong></p>
+<p>Next up, we can move towards checking the distributions of our numerical features using histograms.</p>
+<p><strong>Note: We're not including 'Cabin', 'PassengerId', and 'Name' in our initial distribution analysis for the following reasons:</strong></p>
+<ol>
+<li><p>Cabin: This feature contains multiple pieces of information (deck, cabin number, side) and would benefit from feature engineering before analysis. We'll address this in our feature engineering step.</p>
+</li>
+<li><p>PassengerId: This is a unique identifier for each passenger or group and doesn't provide direct information about the likelihood of being transported. However, we may extract useful information from it later, such as group size or travel companions.</p>
+</li>
+<li><p>Name: While names could potentially provide information about family groups or cultural background, they require more complex text analysis techniques. We'll consider whether to use this information in our feature engineering step.</p>
+</li>
+</ol>
 </div>
 </div>
 </div>
@@ -8041,9 +8051,16 @@ VRDeck        6606.0  303.780048  1127.142166  0.0   0.0   0.0  52.00  20336.0
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">train_data_cleaned</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">'object'</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Unique values in </span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">train_data_cleaned</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">numerical_features</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'Age'</span><span class="p">,</span> <span class="s1">'RoomService'</span><span class="p">,</span> <span class="s1">'FoodCourt'</span><span class="p">,</span> <span class="s1">'ShoppingMall'</span><span class="p">,</span> <span class="s1">'Spa'</span><span class="p">,</span> <span class="s1">'VRDeck'</span><span class="p">]</span>
+<span class="n">numerical_features_one</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'Age'</span><span class="p">,</span> <span class="s1">'RoomService'</span><span class="p">,</span> <span class="s1">'FoodCourt'</span><span class="p">]</span>
+<span class="n">numerical_features_two</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'ShoppingMall'</span><span class="p">,</span> <span class="s1">'Spa'</span><span class="p">,</span> <span class="s1">'VRDeck'</span><span class="p">]</span>
+
+<span class="n">plot_combined_histograms</span><span class="p">(</span>
+    <span class="n">train_data_cleaned</span><span class="p">,</span>
+    <span class="n">numerical_features_one</span><span class="p">,</span>
+    <span class="n">nbins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="o">=</span><span class="s2">"../images/numerical_features_one.png"</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8055,93 +8072,164 @@ VRDeck        6606.0  303.780048  1127.142166  0.0   0.0   0.0  52.00  20336.0
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>
-Unique values in PassengerId:
-PassengerId
-0001_01    1
-6162_01    1
-6175_01    1
-6174_02    1
-6174_01    1
-          ..
-3195_02    1
-3195_01    1
-3191_01    1
-3189_01    1
-9280_02    1
-Name: count, Length: 6606, dtype: int64
-
-Unique values in HomePlanet:
-HomePlanet
-Earth     3566
-Europa    1673
-Mars      1367
-Name: count, dtype: int64
-
-Unique values in CryoSleep:
-CryoSleep
-False    4274
-True     2332
-Name: count, dtype: int64
-
-Unique values in Cabin:
-Cabin
-G/1476/S    7
-E/13/S      7
-C/137/S     7
-G/734/S     7
-B/11/S      7
-           ..
-E/233/S     1
-E/209/P     1
-G/548/S     1
-D/108/P     1
-B/153/P     1
-Name: count, Length: 5305, dtype: int64
-
-Unique values in Destination:
-Destination
-TRAPPIST-1e      4576
-55 Cancri e      1407
-PSO J318.5-22     623
-Name: count, dtype: int64
-
-Unique values in VIP:
-VIP
-False    6444
-True      162
-Name: count, dtype: int64
-
-Unique values in Name:
-Name
-Gwendy Sykess       2
-Grake Porki         2
-Troya Schwardson    2
-Loree Wolfernan     2
-Asch Stradick       2
-                   ..
-Brie Flynney        1
-Flats Chate         1
-Violan Litthews     1
-Ralda Litthews      1
-Propsh Hontichre    1
-Name: count, Length: 6590, dtype: int64
-Name
-Gwendy Sykess       2
-Grake Porki         2
-Troya Schwardson    2
-Loree Wolfernan     2
-Asch Stradick       2
-                   ..
-Brie Flynney        1
-Flats Chate         1
-Violan Litthews     1
-Ralda Litthews      1
-Propsh Hontichre    1
-Name: count, Length: 6590, dtype: int64
-</pre>
 </div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<ol>
+<li><strong>Age:</strong> Roughly normal distribution, peaking around 20-30 years. Slight right skew with fewer older passengers.</li>
+<li><strong>RoomService:</strong> Extremely right-skewed. Most passengers use little to no room service, with a long tail of high spenders.</li>
+<li><strong>FoodCourt:</strong> Similar to RoomService, highly right-skewed. Majority spend little, but some passengers have very high food court expenses.</li>
+</ol>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">plot_combined_histograms</span><span class="p">(</span>
+    <span class="n">train_data_cleaned</span><span class="p">,</span>
+    <span class="n">numerical_features_two</span><span class="p">,</span>
+    <span class="n">nbins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="o">=</span><span class="s2">"../images/numerical_features_two.png"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<ol>
+<li><strong>ShoppingMall:</strong> Heavily right-skewed. Most passengers spend little or nothing, with a few high spenders.</li>
+<li><strong>Spa:</strong> Nearly identical pattern to ShoppingMall. Majority low/no spending, long tail of high spenders.</li>
+<li><strong>VRDeck:</strong> Also right-skewed, but slightly less extreme. More passengers use VRDeck compared to other amenities, still with some very high spenders.</li>
+</ol>
+<p>Next up, let's move on to checking the distributions of our categorical features using bar plots.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">categorical_features</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'HomePlanet'</span><span class="p">,</span> <span class="s1">'CryoSleep'</span><span class="p">,</span> <span class="s1">'Destination'</span><span class="p">,</span> <span class="s1">'VIP'</span><span class="p">,</span> <span class="s1">'Transported'</span><span class="p">]</span>
+<span class="n">categorical_features_one</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'HomePlanet'</span><span class="p">,</span> <span class="s1">'CryoSleep'</span><span class="p">,</span> <span class="s1">'Destination'</span><span class="p">]</span>
+<span class="n">categorical_features_two</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'VIP'</span><span class="p">,</span> <span class="s1">'Transported'</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">plot_combined_bar_charts</span><span class="p">(</span>
+    <span class="n">train_data_cleaned</span><span class="p">,</span>
+    <span class="n">categorical_features_one</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="o">=</span><span class="s2">"../images/categorical_distributions_one.png"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<ol>
+<li><strong>HomePlanet:</strong> Earth is the most common origin, followed by Europa, then Mars. Clear imbalance between planets.</li>
+<li><strong>CryoSleep:</strong> More passengers are not in cryosleep (false) than in cryosleep (true). Roughly 2:1 ratio.</li>
+<li><strong>Destination:</strong> TRAPPIST-1e is the most popular destination by far, followed by 55 Cancri e, then PSO J318.5-22.</li>
+</ol>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">plot_combined_bar_charts</span><span class="p">(</span>
+    <span class="n">train_data_cleaned</span><span class="p">,</span>
+    <span class="n">categorical_features_two</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="o">=</span><span class="s2">"../images/categorical_distributions_two.png"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<ol>
+<li><strong>VIP:</strong> Vast majority of passengers are not VIP. Very small proportion of VIP passengers.</li>
+<li><strong>Transported:</strong> Nearly balanced distribution between transported (true) and not transported (false) passengers, with slightly more transported.</li>
+</ol>
 </div>
 </div>
 </div>

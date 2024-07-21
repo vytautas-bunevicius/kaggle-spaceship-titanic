@@ -792,3 +792,123 @@ def handle_missing_values(data, threshold=0.3):
     print(f"Rows removed due to missing values: {len(data) - len(data_cleaned)}")
 
     return data_cleaned
+
+
+def plot_categorical_features_by_target(
+    df: pd.DataFrame,
+    features: List[str],
+    target: str,
+    save_path: Optional[str] = None
+) -> None:
+    """
+    Plot the distribution of categorical features grouped by a target variable.
+
+    This function creates a grid of bar plots, where each plot represents the distribution
+    of a categorical feature, grouped by the target variable. It includes percentages,
+    consistent y-axis scales, and a summary for each subplot.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame containing the data to be plotted.
+        features (List[str]): A list of column names representing the categorical features to be plotted.
+        target (str): The name of the target variable column used for grouping.
+        save_path (Optional[str]): The file path to save the plot image. If None, the plot is not saved.
+
+    Returns:
+        None. The function displays the plot and optionally saves it to a file.
+    """
+    rows, cols = 2, 2
+    fig = make_subplots(
+        rows=rows,
+        cols=cols,
+        subplot_titles=[f"<b>{feature}</b>" for feature in features],
+        vertical_spacing=0.2,
+        horizontal_spacing=0.1
+    )
+
+    axis_font = {"family": "Styrene A", "color": "#191919"}
+
+    max_count = 0
+    legend_added = False  # Flag to ensure legend is added only once
+
+    for i, feature in enumerate(features):
+        row, col = (i // cols) + 1, (i % cols) + 1
+
+        data = df.groupby([feature, target]).size().unstack(fill_value=0)
+        data_percentages = data.div(data.sum(axis=1), axis=0) * 100
+        max_count = max(max_count, data.values.max())
+
+        for j, category in enumerate(data.columns):
+            show_legend = not legend_added  # Show legend only for the first subplot
+            fig.add_trace(
+                go.Bar(
+                    x=data.index,
+                    y=data[category],
+                    name=f"{target} = {category}",
+                    marker_color=PRIMARY_COLORS[j % len(PRIMARY_COLORS)],
+                    text=[f"{v:.1f}%" for v in data_percentages[category]],
+                    textposition="inside",
+                    width=0.35,
+                    showlegend=show_legend,
+                ),
+                row=row,
+                col=col,
+            )
+        legend_added = True  # Set flag to True after adding legend for the first subplot
+
+        fig.update_xaxes(
+            title_text=feature,
+            row=row,
+            col=col,
+            title_font={**axis_font, "size": 14},
+            tickfont={**axis_font, "size": 12},
+        )
+        fig.update_yaxes(
+            title_text="Count" if col == 1 else None,
+            row=row,
+            col=col,
+            title_font={**axis_font, "size": 14},
+            tickfont={**axis_font, "size": 12},
+        )
+
+    for i in range(1, len(features) + 1):
+        fig.update_yaxes(range=[0, max_count * 1.1], row=(i - 1) // cols + 1, col=(i - 1) % cols + 1)
+
+    fig.update_layout(
+        title=dict(
+            text=f"<b>Distribution of Features by {target}</b>",
+            y=0.98,
+            x=0.5,
+            xanchor='center',
+            yanchor='top',
+            font={"family": "Styrene B", "size": 24, "color": "#191919"},
+        ),
+        barmode="group",
+        height=800,
+        width=1200,
+        template="plotly_white",
+        plot_bgcolor=BACKGROUND_COLOR,
+        paper_bgcolor=BACKGROUND_COLOR,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.15,
+            xanchor="center",
+            x=0.5,
+            bgcolor='rgba(255,255,255,0.6)',  # Semi-transparent background
+            bordercolor="Black",
+            borderwidth=1,
+            font={**axis_font, "size": 12},
+        ),
+        showlegend=True,
+        margin=dict(t=100, b=100, l=50, r=50),
+        font={**axis_font, "size": 12},
+    )
+
+    # Update subplot titles
+    for i, annotation in enumerate(fig['layout']['annotations']):
+        annotation['font'] = {"family": "Styrene B", "size": 16, "color": "#191919"}
+
+    fig.show()
+
+    if save_path:
+        fig.write_image(save_path)
