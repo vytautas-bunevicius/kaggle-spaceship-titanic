@@ -122,7 +122,6 @@ def plot_combined_histograms(
 def plot_combined_bar_charts(
     df: pd.DataFrame,
     features: List[str],
-    max_features_per_plot: int = 3,
     save_path: Optional[str] = None,
 ) -> None:
     """Plots combined bar charts for specified categorical features in the DataFrame.
@@ -130,76 +129,72 @@ def plot_combined_bar_charts(
     Args:
         df: DataFrame containing the features to plot.
         features: List of categorical feature names to plot bar charts for.
-        max_features_per_plot: Maximum number of features to display per plot. Defaults to 3.
-        save_path: Optional path to save the plot images.
+        save_path: Optional path to save the plot image.
 
     Returns:
-        None. Displays the plots and optionally saves them to files.
+        None. Displays the plot and optionally saves it to a file.
     """
-    feature_chunks = [
-        features[i : i + max_features_per_plot]
-        for i in range(0, len(features), max_features_per_plot)
-    ]
+    title = f"Distribution of {', '.join(features)}"
+    rows, cols = 1, len(features)
+
+    fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0.1)
 
     axis_font = {"family": "Styrene A", "color": "#191919"}
 
-    for chunk_index, feature_chunk in enumerate(feature_chunks):
-        title = f"Distribution of {', '.join(feature_chunk)}"
-        rows, cols = 1, len(feature_chunk)
+    for i, feature in enumerate(features):
+        value_counts = df[feature].value_counts().reset_index()
+        value_counts.columns = [feature, "count"]
 
-        fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0.1)
-
-        for i, feature in enumerate(feature_chunk):
-            value_counts = df[feature].value_counts().reset_index()
-            value_counts.columns = [feature, "count"]
-            fig.add_trace(
-                go.Bar(
-                    x=value_counts[feature],
-                    y=value_counts["count"],
-                    name=feature,
-                    marker={
-                        "color": PRIMARY_COLORS[i % len(PRIMARY_COLORS)],
-                        "line": {"color": "#000000", "width": 1},
-                    },
-                ),
-                row=1,
-                col=i + 1,
-            )
-            fig.update_xaxes(
-                title_text=feature,
-                row=1,
-                col=i + 1,
-                title_font={**axis_font, "size": 14},
-                tickfont={**axis_font, "size": 12},
-                showticklabels=True,
-            )
-            fig.update_yaxes(
-                title_text="Count",
-                row=1,
-                col=i + 1,
-                title_font={**axis_font, "size": 14},
-                tickfont={**axis_font, "size": 12},
-            )
-
-        fig.update_layout(
-            title_text=title,
-            title_x=0.5,
-            title_font={"family": "Styrene B", "size": 20, "color": "#191919"},
-            showlegend=False,
-            template="plotly_white",
-            plot_bgcolor=BACKGROUND_COLOR,
-            paper_bgcolor=BACKGROUND_COLOR,
-            height=500,
-            width=400 * len(feature_chunk),
-            margin={"l": 50, "r": 50, "t": 80, "b": 150},
-            font={**axis_font, "size": 12},
+        fig.add_trace(
+            go.Bar(
+                x=value_counts[feature],
+                y=value_counts["count"],
+                name=feature,
+                marker={
+                    "color": PRIMARY_COLORS[i % len(PRIMARY_COLORS)],
+                    "line": {"color": "#000000", "width": 1},
+                },
+            ),
+            row=1,
+            col=i + 1,
         )
 
-        fig.show()
+        fig.update_xaxes(
+            title_text=feature,
+            row=1,
+            col=i + 1,
+            title_standoff=25,
+            title_font={**axis_font, "size": 14},
+            tickfont={**axis_font, "size": 12},
+            showticklabels=True,
+        )
 
-        if save_path:
-            file_path = f"{save_path}_chunk_{chunk_index + 1}.png"
-            fig.write_image(file_path)
+        fig.update_yaxes(
+            title_text="Count",
+            row=1,
+            col=i + 1,
+            title_font={**axis_font, "size": 14},
+            tickfont={**axis_font, "size": 12},
+        )
+
+    fig.update_layout(
+        title_text=title,
+        title_x=0.5,
+        title_font={"family": "Styrene B", "size": 20, "color": "#191919"},
+        showlegend=False,
+        template="plotly_white",
+        plot_bgcolor=BACKGROUND_COLOR,
+        paper_bgcolor=BACKGROUND_COLOR,
+        height=500,
+        width=400 * len(features),
+        margin={"l": 50, "r": 50, "t": 80, "b": 150},
+        font={**axis_font, "size": 12},
+    )
+
+    fig.show()
+
+    if save_path:
+        fig.write_image(save_path)
 
 
 def plot_combined_boxplots(
