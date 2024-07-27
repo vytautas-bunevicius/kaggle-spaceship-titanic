@@ -795,10 +795,7 @@ def handle_missing_values(data, threshold=0.3):
 
 
 def plot_categorical_features_by_target(
-    df: pd.DataFrame,
-    features: List[str],
-    target: str,
-    save_path: Optional[str] = None
+    df: pd.DataFrame, features: List[str], target: str, save_path: Optional[str] = None
 ) -> None:
     """
     Plot the distribution of categorical features grouped by a target variable.
@@ -822,7 +819,7 @@ def plot_categorical_features_by_target(
         cols=cols,
         subplot_titles=[f"<b>{feature}</b>" for feature in features],
         vertical_spacing=0.2,
-        horizontal_spacing=0.1
+        horizontal_spacing=0.1,
     )
 
     axis_font = {"family": "Styrene A", "color": "#191919"}
@@ -853,7 +850,9 @@ def plot_categorical_features_by_target(
                 row=row,
                 col=col,
             )
-        legend_added = True  # Set flag to True after adding legend for the first subplot
+        legend_added = (
+            True  # Set flag to True after adding legend for the first subplot
+        )
 
         fig.update_xaxes(
             title_text=feature,
@@ -871,15 +870,17 @@ def plot_categorical_features_by_target(
         )
 
     for i in range(1, len(features) + 1):
-        fig.update_yaxes(range=[0, max_count * 1.1], row=(i - 1) // cols + 1, col=(i - 1) % cols + 1)
+        fig.update_yaxes(
+            range=[0, max_count * 1.1], row=(i - 1) // cols + 1, col=(i - 1) % cols + 1
+        )
 
     fig.update_layout(
         title=dict(
             text=f"<b>Distribution of Features by {target}</b>",
             y=0.98,
             x=0.5,
-            xanchor='center',
-            yanchor='top',
+            xanchor="center",
+            yanchor="top",
             font={"family": "Styrene B", "size": 24, "color": "#191919"},
         ),
         barmode="group",
@@ -894,7 +895,7 @@ def plot_categorical_features_by_target(
             y=-0.15,
             xanchor="center",
             x=0.5,
-            bgcolor='rgba(255,255,255,0.6)',  # Semi-transparent background
+            bgcolor="rgba(255,255,255,0.6)",  # Semi-transparent background
             bordercolor="Black",
             borderwidth=1,
             font={**axis_font, "size": 12},
@@ -905,10 +906,141 @@ def plot_categorical_features_by_target(
     )
 
     # Update subplot titles
-    for i, annotation in enumerate(fig['layout']['annotations']):
-        annotation['font'] = {"family": "Styrene B", "size": 16, "color": "#191919"}
+    for i, annotation in enumerate(fig["layout"]["annotations"]):
+        annotation["font"] = {"family": "Styrene B", "size": 16, "color": "#191919"}
 
     fig.show()
 
+    if save_path:
+        fig.write_image(save_path)
+
+
+PLOT_COLORS = ["#91A694","#9C8AA5", "#CC7B5C"]
+
+def plot_numeric_distributions(
+    df: pd.DataFrame,
+    features: List[str],
+    target: str,
+    nbins: int = 40,
+    save_path: Optional[str] = None,
+) -> None:
+    """Plots numerical distribution for specified features in the DataFrame.
+
+    Shows distributions for overall (sum of target 0 and 1), target = 0, and target = 1.
+    Bars are plotted with overlap, using edge highlighting for distinction.
+    Legend is placed on the right side with colors unaffected by opacity.
+
+    Args:
+        df: DataFrame containing the features and target variable.
+        features: List of feature names to plot distributions for.
+        target: Name of the binary target variable column.
+        nbins: Number of bins for each histogram. Defaults to 40.
+        save_path: Optional path to save the plot image.
+
+    Returns:
+        None. Displays the plot and optionally saves it to a file.
+    """
+    rows, cols = 1, len(features)
+    fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0.05)
+    axis_font = {"family": "Styrene A", "color": "#191919"}
+    plot_colors = PLOT_COLORS
+    categories = ["Overall", "Target = 1", "Target = 0"]
+
+    for i, feature in enumerate(features):
+        hist_data = []
+        bin_edges = None
+        for category in [0, 1]:
+            x = df[df[target] == category][feature]
+            hist, edges = np.histogram(
+                x, bins=nbins, range=(df[feature].min(), df[feature].max())
+            )
+            hist_data.append(hist)
+            if bin_edges is None:
+                bin_edges = edges
+
+        overall_hist = hist_data[0] + hist_data[1]
+        hist_data = [overall_hist] + hist_data[::-1]
+
+        bin_width = (bin_edges[-1] - bin_edges[0]) / nbins
+
+        for j, (data, color, name) in enumerate(zip(hist_data, plot_colors, categories)):
+            # Main bar with reduced opacity
+            fig.add_trace(
+                go.Bar(
+                    x=bin_edges[:-1],
+                    y=data,
+                    name=name,
+                    marker_color=color,
+                    opacity=0.1,
+                    showlegend=False,
+                    width=bin_width,
+                ),
+                row=1,
+                col=i + 1,
+            )
+
+            # Edge highlight
+            fig.add_trace(
+                go.Scatter(
+                    x=bin_edges[:-1],
+                    y=data,
+                    mode="lines",
+                    line=dict(color=color, width=2),
+                    showlegend=(i == 0),
+                    name=name,
+                    hoverinfo="skip",
+                ),
+                row=1,
+                col=i + 1,
+            )
+
+        fig.update_xaxes(
+            title_text=feature,
+            row=1,
+            col=i + 1,
+            title_font={**axis_font, "size": 14},
+            tickfont={**axis_font, "size": 12},
+        )
+
+        if i == 0:
+            fig.update_yaxes(
+                title_text="Count",
+                row=1,
+                col=1,
+                title_font={**axis_font, "size": 14},
+                tickfont={**axis_font, "size": 12},
+            )
+
+    fig.update_layout(
+        title_text=f"Distribution of {', '.join(features)} by {target}",
+        title_x=0.5,
+        title_font={"family": "Styrene B", "size": 20, "color": "#191919"},
+        showlegend=True,
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=1,
+            xanchor="left",
+            x=1.02,
+            bgcolor="rgba(255,255,255,0.8)",
+        ),
+        template="plotly_white",
+        plot_bgcolor=BACKGROUND_COLOR,
+        paper_bgcolor=BACKGROUND_COLOR,
+        height=600,
+        width=400 * len(features) + 150,
+        margin={
+            "l": 50,
+            "r": 150,
+            "t": 80,
+            "b": 80,
+        },
+        font={**axis_font, "size": 12},
+        barmode="overlay",
+        bargap=0,
+        bargroupgap=0,
+    )
+
+    fig.show()
     if save_path:
         fig.write_image(save_path)
