@@ -1054,13 +1054,17 @@ def plot_single_bar_chart(
 
     fig = go.Figure()
 
-    for i, (value, percentage) in enumerate(zip(value_counts[feature], value_counts["percentage"])):
+    for i, (value, percentage) in enumerate(
+        zip(value_counts[feature], value_counts["percentage"])
+    ):
         fig.add_trace(
             go.Bar(
                 x=[value],
                 y=[percentage],
                 name=f"{feature} = {value}",  # Updated legend label
-                marker_color=PRIMARY_COLORS[i % 2],  # Alternate between first two colors
+                marker_color=PRIMARY_COLORS[
+                    i % 2
+                ],  # Alternate between first two colors
                 text=[f"{percentage:.1f}%"],
                 textposition="auto",
             )
@@ -1113,3 +1117,53 @@ def plot_single_bar_chart(
 
     if save_path:
         fig.write_image(save_path)
+
+
+def engineer_spaceship_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Performs feature engineering on the input DataFrame.
+
+    This function creates new features, extracts information from existing features,
+    and performs binning and interaction feature creation.
+
+    Args:
+        df: The input DataFrame containing passenger information.
+
+    Returns:
+        The DataFrame with newly engineered features added.
+
+    The following features are created or modified:
+        - TotalSpending: Sum of spending across various amenities
+        - CabinDeck, CabinNumber, CabinSide: Extracted from Cabin information
+        - GroupSize: Size of the group a passenger belongs to
+        - AgeGroup: Binned age categories
+        - HomePlanet_CryoSleep: Interaction feature between HomePlanet and CryoSleep
+    """
+    # Create TotalSpending feature
+    df["TotalSpending"] = (
+        df["RoomService"]
+        + df["FoodCourt"]
+        + df["ShoppingMall"]
+        + df["Spa"]
+        + df["VRDeck"]
+    )
+
+    # Extract Cabin information
+    df["CabinDeck"] = df["Cabin"].str[0]
+    df["CabinNumber"] = df["Cabin"].str.split("/").str[1].astype(float)
+    df["CabinSide"] = df["Cabin"].str[-1]
+
+    # Create GroupSize feature
+    df["GroupId"] = df["PassengerId"].str.split("_").str[0]
+    group_sizes = df.groupby("GroupId").size()
+    df["GroupSize"] = df["GroupId"].map(group_sizes)
+
+    # Bin Age feature
+    df["AgeGroup"] = pd.cut(
+        df["Age"], bins=[0, 18, 65, float("inf")], labels=["Child", "Adult", "Senior"]
+    )
+
+    # Create interaction features
+    df["HomePlanetCryoSleep"] = df["HomePlanet"] + "_" + df["CryoSleep"].astype(str)
+
+    return df
