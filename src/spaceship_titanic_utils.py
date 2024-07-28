@@ -1,3 +1,4 @@
+# pylint: disable=import-error, unused-import
 import warnings
 from typing import Dict, List, Optional, Tuple
 
@@ -29,9 +30,12 @@ from sklearn.metrics import (
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
+# pylint: enable=import-error, unused-import
+
 
 BACKGROUND_COLOR = "#EEECE2"
 PRIMARY_COLORS = ["#CC7B5C", "#D4A27F", "#EBDBBC", "#9C8AA5"]
+PLOT_COLORS = ["#91A694", "#9C8AA5", "#CC7B5C"]
 SECONDARY_COLORS = [
     "#91A694",
     "#8B9BAE",
@@ -798,11 +802,11 @@ def plot_categorical_features_by_target(
     df: pd.DataFrame, features: List[str], target: str, save_path: Optional[str] = None
 ) -> None:
     """
-    Plot the distribution of categorical features grouped by a target variable.
+    Plot the distribution of specified categorical features grouped by a target variable.
 
     This function creates a grid of bar plots, where each plot represents the distribution
-    of a categorical feature, grouped by the target variable. It includes percentages,
-    consistent y-axis scales, and a summary for each subplot.
+    of a categorical feature, grouped by the target variable. It shows percentages and
+    uses a consistent y-axis scale across all subplots.
 
     Args:
         df (pd.DataFrame): The input DataFrame containing the data to be plotted.
@@ -817,105 +821,84 @@ def plot_categorical_features_by_target(
     fig = make_subplots(
         rows=rows,
         cols=cols,
-        subplot_titles=[f"<b>{feature}</b>" for feature in features],
         vertical_spacing=0.2,
         horizontal_spacing=0.1,
     )
 
     axis_font = {"family": "Styrene A", "color": "#191919"}
-
-    max_count = 0
-    legend_added = False  # Flag to ensure legend is added only once
+    colors = {0: PRIMARY_COLORS[0], 1: PRIMARY_COLORS[1]}
 
     for i, feature in enumerate(features):
         row, col = (i // cols) + 1, (i % cols) + 1
 
         data = df.groupby([feature, target]).size().unstack(fill_value=0)
         data_percentages = data.div(data.sum(axis=1), axis=0) * 100
-        max_count = max(max_count, data.values.max())
 
-        for j, category in enumerate(data.columns):
-            show_legend = not legend_added  # Show legend only for the first subplot
+        for category in data.columns:
             fig.add_trace(
                 go.Bar(
                     x=data.index,
-                    y=data[category],
+                    y=data_percentages[category],
                     name=f"{target} = {category}",
-                    marker_color=PRIMARY_COLORS[j % len(PRIMARY_COLORS)],
+                    marker_color=colors[category],
                     text=[f"{v:.1f}%" for v in data_percentages[category]],
                     textposition="inside",
                     width=0.35,
-                    showlegend=show_legend,
+                    showlegend=(i == 0),
                 ),
                 row=row,
                 col=col,
             )
-        legend_added = (
-            True  # Set flag to True after adding legend for the first subplot
-        )
 
         fig.update_xaxes(
             title_text=feature,
             row=row,
             col=col,
+            title_standoff=25,
             title_font={**axis_font, "size": 14},
             tickfont={**axis_font, "size": 12},
+            showticklabels=True,
         )
+
         fig.update_yaxes(
-            title_text="Count" if col == 1 else None,
+            title_text="Percentage" if col == 1 else None,
             row=row,
             col=col,
             title_font={**axis_font, "size": 14},
             tickfont={**axis_font, "size": 12},
-        )
-
-    for i in range(1, len(features) + 1):
-        fig.update_yaxes(
-            range=[0, max_count * 1.1], row=(i - 1) // cols + 1, col=(i - 1) % cols + 1
+            range=[0, 100],
         )
 
     fig.update_layout(
-        title=dict(
-            text=f"<b>Distribution of Features by {target}</b>",
-            y=0.98,
-            x=0.5,
-            xanchor="center",
-            yanchor="top",
-            font={"family": "Styrene B", "size": 24, "color": "#191919"},
-        ),
-        barmode="group",
-        height=800,
-        width=1200,
+        title_text=f"Distribution of {', '.join(features)} by {target}",
+        title_x=0.5,
+        title_font={"family": "Styrene B", "size": 20, "color": "#191919"},
+        showlegend=True,
         template="plotly_white",
         plot_bgcolor=BACKGROUND_COLOR,
         paper_bgcolor=BACKGROUND_COLOR,
+        height=800,
+        width=1200,
+        margin={"l": 50, "r": 150, "t": 100, "b": 50},
+        font={**axis_font, "size": 12},
         legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.15,
-            xanchor="center",
-            x=0.5,
-            bgcolor="rgba(255,255,255,0.6)",  # Semi-transparent background
+            orientation="v",
+            yanchor="middle",  # Changed from "top" to "middle"
+            y=0.5,  # Changed from 0.99 to 0.5 for vertical center
+            xanchor="left",
+            x=1.02,
+            bgcolor="rgba(255,255,255,0.6)",
             bordercolor="Black",
             borderwidth=1,
             font={**axis_font, "size": 12},
         ),
-        showlegend=True,
-        margin=dict(t=100, b=100, l=50, r=50),
-        font={**axis_font, "size": 12},
     )
-
-    # Update subplot titles
-    for i, annotation in enumerate(fig["layout"]["annotations"]):
-        annotation["font"] = {"family": "Styrene B", "size": 16, "color": "#191919"}
 
     fig.show()
 
     if save_path:
         fig.write_image(save_path)
 
-
-PLOT_COLORS = ["#91A694","#9C8AA5", "#CC7B5C"]
 
 def plot_numeric_distributions(
     df: pd.DataFrame,
@@ -963,7 +946,9 @@ def plot_numeric_distributions(
 
         bin_width = (bin_edges[-1] - bin_edges[0]) / nbins
 
-        for j, (data, color, name) in enumerate(zip(hist_data, plot_colors, categories)):
+        for j, (data, color, name) in enumerate(
+            zip(hist_data, plot_colors, categories)
+        ):
             # Main bar with reduced opacity
             fig.add_trace(
                 go.Bar(
@@ -1018,8 +1003,8 @@ def plot_numeric_distributions(
         showlegend=True,
         legend=dict(
             orientation="v",
-            yanchor="top",
-            y=1,
+            yanchor="middle",  # Changed from "top" to "middle"
+            y=0.5,  # Changed from 1 to 0.5 for vertical center
             xanchor="left",
             x=1.02,
             bgcolor="rgba(255,255,255,0.8)",
@@ -1042,5 +1027,89 @@ def plot_numeric_distributions(
     )
 
     fig.show()
+    if save_path:
+        fig.write_image(save_path)
+
+
+def plot_single_bar_chart(
+    df: pd.DataFrame,
+    feature: str,
+    save_path: Optional[str] = None,
+) -> None:
+    """Plots a percentage bar chart for a specified categorical feature in the DataFrame.
+
+    Args:
+        df: DataFrame containing the feature to plot.
+        feature: Name of the categorical feature to plot.
+        save_path: Optional path to save the plot image.
+
+    Returns:
+        None. Displays the plot and optionally saves it to a file.
+    """
+    title = f"Distribution of target variable {feature}"
+
+    value_counts = df[feature].value_counts(normalize=True).reset_index()
+    value_counts.columns = [feature, "percentage"]
+    value_counts["percentage"] *= 100  # Convert to percentage
+
+    fig = go.Figure()
+
+    for i, (value, percentage) in enumerate(zip(value_counts[feature], value_counts["percentage"])):
+        fig.add_trace(
+            go.Bar(
+                x=[value],
+                y=[percentage],
+                name=f"{feature} = {value}",  # Updated legend label
+                marker_color=PRIMARY_COLORS[i % 2],  # Alternate between first two colors
+                text=[f"{percentage:.1f}%"],
+                textposition="auto",
+            )
+        )
+
+    axis_font = {"family": "Styrene A", "color": "#191919"}
+
+    fig.update_xaxes(
+        title_text=feature,
+        title_standoff=25,
+        title_font={**axis_font, "size": 14},
+        tickfont={**axis_font, "size": 12},
+        showticklabels=True,
+    )
+
+    fig.update_yaxes(
+        title_text="Percentage",
+        title_font={**axis_font, "size": 14},
+        tickfont={**axis_font, "size": 12},
+        range=[0, 100],  # Set y-axis range from 0 to 100
+    )
+
+    fig.update_layout(
+        title_text=title,
+        title_x=0.5,
+        title_font={"family": "Styrene B", "size": 20, "color": "#191919"},
+        showlegend=True,
+        template="plotly_white",
+        plot_bgcolor=BACKGROUND_COLOR,
+        paper_bgcolor=BACKGROUND_COLOR,
+        height=500,
+        width=1200,
+        margin={"l": 50, "r": 150, "t": 80, "b": 50},
+        font={**axis_font, "size": 12},
+        barmode="group",
+        legend=dict(
+            orientation="v",
+            yanchor="middle",
+            y=0.5,
+            xanchor="left",
+            x=1.02,
+            bgcolor="rgba(255,255,255,0.6)",
+            bordercolor="Black",
+            borderwidth=1,
+            font={**axis_font, "size": 12},
+        ),
+    )
+
+    fig.show()
+
     if save_path:
         fig.write_image(save_path)
