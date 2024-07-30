@@ -386,21 +386,22 @@ def flag_anomalies(df, features):
     return anomaly_flags
 
 
-def calculate_cramers_v(contingency_table):
+def calculate_cramers_v(x, y):
     """
-    Calculates Cramer's V for a given contingency table.
+    Calculates Cramer's V statistic for categorical-categorical association.
 
     Args:
-        contingency_table (pandas.DataFrame): A contingency table of categorical variables.
+        x: pandas Series
+        y: pandas Series
 
     Returns:
-        float: The calculated Cramer's V value.
+        float: Cramer's V
     """
-    chi2 = stats.chi2_contingency(contingency_table)[0]
-    n = contingency_table.sum().sum()
-    min_dim = min(contingency_table.shape) - 1
-    cramers_v = np.sqrt(chi2 / (n * min_dim))
-    return cramers_v
+    confusion_matrix = pd.crosstab(x, y)
+    chi2 = stats.chi2_contingency(confusion_matrix)[0]
+    n = confusion_matrix.sum().sum()
+    min_dim = min(confusion_matrix.shape) - 1
+    return np.sqrt(chi2 / (n * min_dim))
 
 
 def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall=None):
