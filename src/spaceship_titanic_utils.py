@@ -1,6 +1,103 @@
-# pylint: disable=import-error, unused-import
+# pylint: disable=import-error, unused-import, line-too-long,
+# cspell:disable
+"""
+
+This module contains a collection of utility functions for various tasks in data science projects, including
+data preprocessing, anomaly detection, feature engineering, model evaluation, and visualization.
+
+Functions:
+    plot_combined_histograms(df, features, nbins=40, save_path=None):
+        Plots combined histograms for specified features in the DataFrame.
+
+    plot_combined_bar_charts(df, features, save_path=None):
+        Plots combined bar charts for specified categorical features in the DataFrame.
+
+    plot_combined_boxplots(df, features, save_path=None):
+        Plots combined boxplots for specified numerical features in the DataFrame.
+
+    plot_correlation_matrix(df, numerical_features, save_path=None):
+        Plots the correlation matrix of the specified numerical features in the DataFrame.
+
+    detect_anomalies_iqr(df, features):
+        Detects anomalies in multiple features using the IQR method.
+
+    flag_anomalies(df, features):
+        Identify and flag anomalies in a DataFrame based on the Interquartile Range (IQR) method for specified features.
+
+    calculate_cramers_v(x, y):
+        Calculates Cramer's V statistic for categorical-categorical association.
+
+    evaluate_model(model, features, true_labels, dataset_name=None, threshold=None, target_recall=None):
+        Evaluate a model's performance with optional threshold adjustment.
+
+    plot_model_performance(results, metrics, save_path=None):
+        Plots and optionally saves a bar chart of model performance metrics with legend on the right.
+
+    plot_combined_confusion_matrices(results, y_test, y_pred_dict, labels=None, save_path=None):
+        Plots combined confusion matrices for multiple models.
+
+    extract_feature_importances(model, feature_data, target_data):
+        Extract feature importances using permutation importance for models that do not directly provide them.
+
+    plot_feature_importances(feature_importances, save_path=None):
+        Plots and optionally saves a bar chart of feature importances across different models.
+
+    plot_distribution_comparison(df_before, df_after, features, title="Distribution Comparison", save_path=None):
+        Plots the distribution of specified features before and after handling missing values.
+
+    handle_missing_values(data, threshold=0.3):
+        Handles missing values in a given DataFrame by dropping columns and rows.
+
+    plot_categorical_features_by_target(df, features, target, save_path=None):
+        Plot the distribution of specified categorical features grouped by a target variable.
+
+    plot_numeric_distributions(df, features, target, nbins=40, save_path=None):
+        Plots numerical distribution for specified features in the DataFrame.
+
+    plot_single_bar_chart(df, feature, save_path=None):
+        Plots a percentage bar chart for a specified categorical feature in the DataFrame.
+
+    engineer_spaceship_features(df):
+        Performs feature engineering on the input DataFrame.
+
+Example Usage:
+    import pandas as pd
+    from sklearn.ensemble import RandomForestClassifier
+    from utilities import (
+        plot_combined_histograms, plot_combined_bar_charts, plot_combined_boxplots,
+        plot_correlation_matrix, detect_anomalies_iqr, flag_anomalies, calculate_cramers_v,
+        evaluate_model, plot_model_performance, plot_combined_confusion_matrices,
+        extract_feature_importances, plot_feature_importances, plot_distribution_comparison,
+        handle_missing_values, plot_categorical_features_by_target, plot_numeric_distributions,
+        plot_single_bar_chart, engineer_spaceship_features
+    )
+
+    # Example DataFrame
+    df = pd.DataFrame({
+        'feature1': [1, 2, 1.5, 1.8, 100],
+        'feature2': [5, 3, 4.8, 3.5, -100]
+    })
+
+    # Anomaly Detection
+    anomalies = detect_anomalies_iqr(df, ['feature1', 'feature2'])
+    print(anomalies)
+
+    # Feature Engineering
+    df = engineer_spaceship_features(df)
+    print(df)
+
+    # Model Evaluation
+    model = RandomForestClassifier()
+    model.fit(df[['feature1', 'feature2']], [0, 1, 0, 1, 1])
+    metrics = evaluate_model(model, df[['feature1', 'feature2']], [0, 1, 0, 1, 1])
+    print(metrics)
+
+    # Visualization
+    plot_combined_histograms(df, ['feature1', 'feature2'])
+"""
+
 import warnings
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import lightgbm as lgb
 import numpy as np
@@ -31,7 +128,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 # pylint: enable=import-error, unused-import
-
 
 BACKGROUND_COLOR = "#EEECE2"
 PRIMARY_COLORS = ["#CC7B5C", "#D4A27F", "#EBDBBC", "#9C8AA5"]
@@ -305,7 +401,9 @@ def plot_correlation_matrix(
         height=800,
         width=800,
         margin=dict(l=100, r=100, t=100, b=100),
-        xaxis=dict(tickangle=-45, title_font=dict(size=18), tickfont=dict(size=14)),
+        xaxis=dict(
+            tickangle=-45, title_font=dict(size=18), tickfont=dict(size=14)
+        ),
         yaxis=dict(title_font=dict(size=18), tickfont=dict(size=14)),
     )
 
@@ -352,7 +450,9 @@ def detect_anomalies_iqr(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
         anomalies_list.append(feature_anomalies)
 
     if anomalies_list:
-        anomalies = pd.concat(anomalies_list).drop_duplicates().reset_index(drop=True)
+        anomalies = (
+            pd.concat(anomalies_list).drop_duplicates().reset_index(drop=True)
+        )
         anomalies = anomalies[features]
     else:
         anomalies = pd.DataFrame(columns=features)
@@ -360,13 +460,13 @@ def detect_anomalies_iqr(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
     return anomalies
 
 
-def flag_anomalies(df, features):
+def flag_anomalies(df: pd.DataFrame, features: List[str]) -> pd.Series:
     """
     Identify and flag anomalies in a DataFrame based on the Interquartile Range (IQR) method for specified features.
 
     Args:
         df (pd.DataFrame): The input DataFrame containing the data.
-        features (list of str): A list of column names in the DataFrame to check for anomalies.
+        features (List[str]): A list of column names in the DataFrame to check for anomalies.
 
     Returns:
         pd.Series: A Series of boolean values where True indicates an anomaly in any of the specified features.
@@ -374,13 +474,15 @@ def flag_anomalies(df, features):
     anomaly_flags = pd.Series(False, index=df.index)
 
     for feature in features:
-        Q1 = df[feature].quantile(0.25)
-        Q3 = df[feature].quantile(0.75)
-        IQR = Q3 - Q1
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
+        first_quartile = df[feature].quantile(0.25)
+        third_quartile = df[feature].quantile(0.75)
+        interquartile_range = third_quartile - first_quartile
+        lower_bound = first_quartile - 1.5 * interquartile_range
+        upper_bound = third_quartile + 1.5 * interquartile_range
 
-        feature_anomalies = (df[feature] < lower_bound) | (df[feature] > upper_bound)
+        feature_anomalies = (df[feature] < lower_bound) | (
+            df[feature] > upper_bound
+        )
         anomaly_flags |= feature_anomalies
 
     return anomaly_flags
@@ -404,25 +506,34 @@ def calculate_cramers_v(x, y):
     return np.sqrt(chi2 / (n * min_dim))
 
 
-def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall=None):
+def evaluate_model(
+    model,
+    features: np.ndarray,
+    true_labels: np.ndarray,
+    dataset_name: str = None,
+    threshold: float = None,
+    target_recall: float = None,
+) -> Dict[str, Union[float, np.ndarray]]:
     """
     Evaluate a model's performance with optional threshold adjustment.
 
     Args:
-        model (model): The trained model to evaluate.
-        X (array): Features.
-        y (array): True labels.
+        model: The trained model to evaluate.
+        features (np.ndarray): Feature data.
+        true_labels (np.ndarray): True labels.
         dataset_name (str, optional): Name of the dataset for display purposes.
         threshold (float, optional): Custom threshold for classification.
         target_recall (float, optional): Target recall for threshold adjustment.
 
     Returns:
-        dict: Dictionary containing various performance metrics.
+        Dict[str, Union[float, np.ndarray]]: Dictionary containing various performance metrics.
     """
-    y_pred_proba = model.predict_proba(X)[:, 1]
+    y_pred_proba = model.predict_proba(features)[:, 1]
 
     if target_recall is not None:
-        precisions, recalls, thresholds = precision_recall_curve(y, y_pred_proba)
+        precisions, recalls, thresholds = precision_recall_curve(
+            true_labels, y_pred_proba
+        )
         idx = np.argmin(np.abs(recalls - target_recall))
         threshold = thresholds[idx]
         print(f"Adjusted threshold: {threshold:.4f}")
@@ -431,28 +542,34 @@ def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall
     if threshold is not None:
         y_pred = (y_pred_proba >= threshold).astype(int)
     else:
-        y_pred = model.predict(X)
+        y_pred = model.predict(features)
 
     if dataset_name:
         print(f"\nResults on {dataset_name} set:")
 
-    print(classification_report(y, y_pred, zero_division=1))  # Modified line
+    print(
+        classification_report(true_labels, y_pred, zero_division=1)
+    )  # Modified line
     print("Confusion Matrix:")
-    print(confusion_matrix(y, y_pred))
-    print(f"ROC AUC: {roc_auc_score(y, y_pred_proba):.4f}")
-    print(f"PR AUC: {average_precision_score(y, y_pred_proba):.4f}")
-    print(f"F1 Score: {f1_score(y, y_pred, zero_division=1):.4f}")
-    print(f"Precision: {precision_score(y, y_pred, zero_division=1):.4f}")
-    print(f"Recall: {recall_score(y, y_pred):.4f}")
-    print(f"Balanced Accuracy: {balanced_accuracy_score(y, y_pred):.4f}")
+    print(confusion_matrix(true_labels, y_pred))
+    print(f"ROC AUC: {roc_auc_score(true_labels, y_pred_proba):.4f}")
+    print(f"PR AUC: {average_precision_score(true_labels, y_pred_proba):.4f}")
+    print(f"F1 Score: {f1_score(true_labels, y_pred, zero_division=1):.4f}")
+    print(
+        f"Precision: {precision_score(true_labels, y_pred, zero_division=1):.4f}"
+    )
+    print(f"Recall: {recall_score(true_labels, y_pred):.4f}")
+    print(
+        f"Balanced Accuracy: {balanced_accuracy_score(true_labels, y_pred):.4f}"
+    )
 
     return {
-        "roc_auc": roc_auc_score(y, y_pred_proba),
-        "pr_auc": average_precision_score(y, y_pred_proba),
-        "f1": f1_score(y, y_pred, zero_division=1),
-        "precision": precision_score(y, y_pred, zero_division=1),
-        "recall": recall_score(y, y_pred),
-        "balanced_accuracy": balanced_accuracy_score(y, y_pred),
+        "roc_auc": roc_auc_score(true_labels, y_pred_proba),
+        "pr_auc": average_precision_score(true_labels, y_pred_proba),
+        "f1": f1_score(true_labels, y_pred, zero_division=1),
+        "precision": precision_score(true_labels, y_pred, zero_division=1),
+        "recall": recall_score(true_labels, y_pred),
+        "balanced_accuracy": balanced_accuracy_score(true_labels, y_pred),
         "threshold": threshold if threshold is not None else 0.5,
         "y_pred": y_pred,
         "y_pred_proba": y_pred_proba,
@@ -476,7 +593,8 @@ def plot_model_performance(
     """
     model_names = list(results.keys())
     data = {
-        metric: [results[name][metric] for name in model_names] for metric in metrics
+        metric: [results[name][metric] for name in model_names]
+        for metric in metrics
     }
 
     fig = go.Figure()
@@ -517,7 +635,9 @@ def plot_model_performance(
         paper_bgcolor=BACKGROUND_COLOR,
     )
 
-    fig.update_yaxes(range=[0, 1], showgrid=True, gridwidth=1, gridcolor="LightGrey")
+    fig.update_yaxes(
+        range=[0, 1], showgrid=True, gridwidth=1, gridcolor="LightGrey"
+    )
     fig.update_xaxes(tickangle=-45, tickfont={**axis_font, "size": 12})
 
     fig.show()
@@ -533,6 +653,24 @@ def plot_combined_confusion_matrices(
     labels: Optional[List[str]] = None,
     save_path: Optional[str] = None,
 ) -> None:
+    """Plots combined confusion matrices for multiple models.
+
+    Args:
+        results (Dict[str, Dict[str, float]]): A dictionary containing the results of each model.
+            The keys are the model names, and the values are dictionaries containing the model's performance metrics.
+        y_test (np.ndarray): The true labels of the test data.
+        y_pred_dict (Dict[str, np.ndarray]): A dictionary containing the predicted labels for each model.
+            The keys are the model names, and the values are the predicted labels.
+        labels (Optional[List[str]], optional): A list of labels for the classes. Defaults to None.
+        save_path (Optional[str], optional): The file path to save the plot as an image. Defaults to None.
+
+    Returns:
+        None: This function does not return anything. It plots the confusion matrices using Plotly.
+
+    Raises:
+        None: This function does not raise any exceptions.
+
+    """
     n_models = len(results)
 
     if n_models <= 2:
@@ -543,18 +681,18 @@ def plot_combined_confusion_matrices(
     fig = make_subplots(
         rows=rows,
         cols=cols,
-        subplot_titles=list(results.keys()) + [""] * (rows * cols - n_models),
+        subplot_titles=list(results.keys()) + [""] * (rows * cols - n_models),  # type: ignore
         vertical_spacing=0.2,
         horizontal_spacing=0.1,
     )
 
     axis_font = {"family": "Styrene A", "color": "#191919"}
 
-    for i, (name, model_results) in enumerate(results.items()):
+    for i, (name, model_results) in enumerate(results.items()):  # type: ignore
         row = i // cols + 1
         col = i % cols + 1
 
-        cm = confusion_matrix(y_test, y_pred_dict[name])
+        cm = confusion_matrix(y_test, y_pred_dict[name])  # type: ignore
         cm_percent = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis] * 100
 
         text = [
@@ -577,8 +715,8 @@ def plot_combined_confusion_matrices(
 
         heatmap = go.Heatmap(
             z=cm,
-            x=labels or ["No Stroke", "Stroke"],
-            y=labels or ["No Stroke", "Stroke"],
+            x=labels or ["No Stroke", "Stroke"],  # type: ignore
+            y=labels or ["No Stroke", "Stroke"],  # type: ignore
             hoverongaps=False,
             text=text,
             texttemplate="%{text}",
@@ -627,31 +765,37 @@ def plot_combined_confusion_matrices(
 
     fig.show()
 
-    if save_path:
-        fig.write_image(save_path)
+    if save_path:  # type: ignore
+        fig.write_image(save_path)  # type: ignore
 
 
-def extract_feature_importances(model, X: pd.DataFrame, y: pd.Series) -> np.ndarray:
-    """Extract feature importances using permutation importance for models that do not directly provide them.
+def extract_feature_importances(
+    model, feature_data: pd.DataFrame, target_data: Union[pd.Series, np.ndarray]
+) -> np.ndarray:
+    """
+    Extract feature importances using permutation importance for models that do not directly provide them.
 
     Args:
         model: Trained model.
-        X: Feature data (DataFrame).
-        y: Target data (Series or array).
+        feature_data (pd.DataFrame): Feature data.
+        target_data (Union[pd.Series, np.ndarray]): Target data.
 
     Returns:
-        Array of feature importances.
+        np.ndarray: Array of feature importances.
     """
     if hasattr(model, "feature_importances_"):
         return model.feature_importances_
     else:
         # Calculate permutation importance
-        perm_import = permutation_importance(model, X, y, n_repeats=30, random_state=42)
-        return perm_import.importances_mean
+        permutation_import = permutation_importance(
+            model, feature_data, target_data, n_repeats=30, random_state=42
+        )
+        return permutation_import.importances_mean
 
 
 def plot_feature_importances(
-    feature_importances: Dict[str, Dict[str, float]], save_path: Optional[str] = None
+    feature_importances: Dict[str, Dict[str, float]],
+    save_path: Optional[str] = None,
 ) -> None:
     """Plots and optionally saves a bar chart of feature importances across different models.
 
@@ -714,7 +858,11 @@ def plot_feature_importances(
 
 
 def plot_distribution_comparison(
-    df_before, df_after, features, title="Distribution Comparison", save_path=None
+    df_before,
+    df_after,
+    features,
+    title="Distribution Comparison",
+    save_path=None,
 ):
     """
     Plots the distribution of specified features before and after handling missing values.
@@ -739,14 +887,18 @@ def plot_distribution_comparison(
     for i, feature in enumerate(features):
         fig.add_trace(
             go.Histogram(
-                x=df_before[feature], name="Before", marker_color=PRIMARY_COLORS[0]
+                x=df_before[feature],
+                name="Before",
+                marker_color=PRIMARY_COLORS[0],
             ),
             row=i + 1,
             col=1,
         )
         fig.add_trace(
             go.Histogram(
-                x=df_after[feature], name="After", marker_color=PRIMARY_COLORS[1]
+                x=df_after[feature],
+                name="After",
+                marker_color=PRIMARY_COLORS[1],
             ),
             row=i + 1,
             col=2,
@@ -794,17 +946,21 @@ def handle_missing_values(data, threshold=0.3):
     )
 
     data_cleaned = data_cleaned.dropna()
-    print(f"Rows removed due to missing values: {len(data) - len(data_cleaned)}")
+    print(
+        f"Rows removed due to missing values: {len(data) - len(data_cleaned)}"
+    )
 
     return data_cleaned
 
 
 def plot_categorical_features_by_target(
-    df: pd.DataFrame, features: List[str], target: str, save_path: Optional[str] = None
+    df: pd.DataFrame,
+    features: List[str],
+    target: str,
+    save_path: Optional[str] = None,
 ) -> None:
     """
     Plot the distribution of specified categorical features grouped by a target variable.
-
     This function creates a grid of bar plots, where each plot represents the distribution
     of a categorical feature, grouped by the target variable. It shows percentages and
     uses a consistent y-axis scale across all subplots.
@@ -818,12 +974,23 @@ def plot_categorical_features_by_target(
     Returns:
         None. The function displays the plot and optionally saves it to a file.
     """
-    rows, cols = 2, 2
+    num_features = len(features)
+    # Determine the number of rows and columns based on the number of features
+    if num_features == 1:
+        rows, cols = 1, 1
+    elif num_features == 2:
+        rows, cols = 1, 2
+    elif num_features == 3:
+        rows, cols = 2, 2
+    else:
+        rows, cols = (num_features + 1) // 2, 2
+
     fig = make_subplots(
         rows=rows,
         cols=cols,
         vertical_spacing=0.2,
         horizontal_spacing=0.1,
+        # Removed subplot_titles to prevent feature names from appearing at the top
     )
 
     axis_font = {"family": "Styrene A", "color": "#191919"}
@@ -831,8 +998,11 @@ def plot_categorical_features_by_target(
 
     for i, feature in enumerate(features):
         row, col = (i // cols) + 1, (i % cols) + 1
-
-        data = df.groupby([feature, target]).size().unstack(fill_value=0)
+        data = (
+            df.groupby([feature, target], observed=False)
+            .size()
+            .unstack(fill_value=0)
+        )
         data_percentages = data.div(data.sum(axis=1), axis=0) * 100
 
         for category in data.columns:
@@ -878,14 +1048,14 @@ def plot_categorical_features_by_target(
         template="plotly_white",
         plot_bgcolor=BACKGROUND_COLOR,
         paper_bgcolor=BACKGROUND_COLOR,
-        height=800,
-        width=1200,
+        height=400 * rows,
+        width=600 * cols,
         margin={"l": 50, "r": 150, "t": 100, "b": 50},
         font={**axis_font, "size": 12},
         legend=dict(
             orientation="v",
-            yanchor="middle",  # Changed from "top" to "middle"
-            y=0.5,  # Changed from 0.99 to 0.5 for vertical center
+            yanchor="middle",
+            y=0.5,
             xanchor="left",
             x=1.02,
             bgcolor="rgba(255,255,255,0.6)",
@@ -896,7 +1066,6 @@ def plot_categorical_features_by_target(
     )
 
     fig.show()
-
     if save_path:
         fig.write_image(save_path)
 
@@ -1158,13 +1327,18 @@ def engineer_spaceship_features(df: pd.DataFrame) -> pd.DataFrame:
     df["GroupId"] = df["PassengerId"].str.split("_").str[0]
     group_sizes = df.groupby("GroupId").size()
     df["GroupSize"] = df["GroupId"].map(group_sizes)
+    df.drop("GroupId", axis=1, inplace=True)  # Drop GroupId after using it
 
     # Bin Age feature
     df["AgeGroup"] = pd.cut(
-        df["Age"], bins=[0, 18, 65, float("inf")], labels=["Child", "Adult", "Senior"]
+        df["Age"],
+        bins=[0, 18, 65, float("inf")],
+        labels=["Child", "Adult", "Senior"],
     )
 
     # Create interaction features
-    df["HomePlanetCryoSleep"] = df["HomePlanet"] + "_" + df["CryoSleep"].astype(str)
+    df["HomePlanetCryoSleep"] = (
+        df["HomePlanet"] + "_" + df["CryoSleep"].astype(str)
+    )
 
     return df
