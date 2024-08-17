@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spaceship Titanic Predictor</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background-color: #eeece2;
+        color: #666663;
+      }
+      .spaceship {
+        animation: float 6s ease-in-out infinite;
+      }
+      @keyframes float {
+        0% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+        100% {
+          transform: translateY(0px);
+        }
+      }
+      .custom-input {
+        background-color: #fafaf7;
+        border-color: #bfbfba;
+      }
+      .custom-input:focus {
+        border-color: #9c8aa5;
+        box-shadow: 0 0 0 3px rgba(156, 138, 165, 0.2);
+      }
+      .custom-button {
+        background-color: #cc7b5c;
+      }
+      .custom-button:hover {
+        background-color: #d4a27f;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex items-center justify-center">
+    <div class="container mx-auto px-4">
+      <div
+        class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl"
+      >
+        <div class="p-8">
+          <div
+            class="uppercase tracking-wide text-sm text-cc7b5c font-semibold mb-1"
+          >
+            Predict Your Fate
+          </div>
+          <h1 class="block mt-1 text-lg leading-tight font-medium text-666663">
+            Spaceship Titanic Predictor
+          </h1>
+          <div class="mt-4 flex justify-center">
+            <div class="spaceship w-24 h-24">
+              <svg
+                viewbox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 15.5C14.21 15.5 16 13.71 16 11.5V6C16 3.79 14.21 2 12 2C9.79 2 8 3.79 8 6V11.5C8 13.71 9.79 15.5 12 15.5Z"
+                  stroke="#CC7B5C"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ></path>
+                <path
+                  d="M4.34998 9.64999C4.12998 10.41 4 11.22 4 12.05C4 16.47 7.58998 20.06 12 20.06C16.41 20.06 20 16.47 20 12.05C20 11.22 19.87 10.41 19.65 9.64999"
+                  stroke="#9C8AA5"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ></path>
+                <path
+                  d="M12 20.06V23"
+                  stroke="#91A694"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ></path>
+              </svg>
+            </div>
+          </div>
+          <form id="prediction-form" class="mt-6">
+            <div class="grid grid-cols-1 gap-6">
+              <label class="block">
+                <span class="text-gray-700">Home Planet</span>
+                <select
+                  name="home_planet"
+                  class="mt-1 block w-full rounded-md custom-input focus:outline-none"
+                  required
+                >
+                  <option value="Earth">Earth</option>
+                  <option value="Europa">Europa</option>
+                  <option value="Mars">Mars</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="text-gray-700">CryoSleep</span>
+                <select
+                  name="cryo_sleep"
+                  class="mt-1 block w-full rounded-md custom-input focus:outline-none"
+                  required
+                >
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="text-gray-700">Destination</span>
+                <select
+                  name="destination"
+                  class="mt-1 block w-full rounded-md custom-input focus:outline-none"
+                  required
+                >
+                  <option value="TRAPPIST-1e">TRAPPIST-1e</option>
+                  <option value="55 Cancri e">55 Cancri e</option>
+                  <option value="PSO J318.5-22">PSO J318.5-22</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="text-gray-700">Age</span>
+                <input
+                  type="number"
+                  name="age"
+                  class="mt-1 block w-full rounded-md custom-input focus:outline-none"
+                  placeholder="Age"
+                  required
+                />
+              </label>
+              <label class="block">
+                <span class="text-gray-700">VIP</span>
+                <select
+                  name="vip"
+                  class="mt-1 block w-full rounded-md custom-input focus:outline-none"
+                  required
+                >
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="text-gray-700">Room Service Expenses</span>
+                <input
+                  type="number"
+                  name="room_service"
+                  class="mt-1 block w-full rounded-md custom-input focus:outline-none"
+                  placeholder="Room Service"
+                  value="0"
+                  min="0"
+                  step="0.01"
+                />
+              </label>
+              <label class="block">
+                <span class="text-gray-700">Food Court Expenses</span>
+                <input
+                  type="number"
+                  name="food_court"
+                  class="mt-1 block w-full rounded-md custom-input focus:outline-none"
+                  placeholder="Food Court"
+                  value="0"
+                  min="0"
+                  step="0.01"
+                />
+              </label>
+              <label class="block">
+                <span class="text-gray-700">Shopping Mall Expenses</span>
+                <input
+                  type="number"
+                  name="shopping_mall"
+                  class="mt-1 block w-full rounded-md custom-input focus:outline-none"
+                  placeholder="Shopping Mall"
+                  value="0"
+                  min="0"
+                  step="0.01"
+                />
+              </label>
+              <label class="block">
+                <span class="text-gray-700">Spa Expenses</span>
+                <input
+                  type="number"
+                  name="spa"
+                  class="mt-1 block w-full rounded-md custom-input focus:outline-none"
+                  placeholder="Spa"
+                  value="0"
+                  min="0"
+                  step="0.01"
+                />
+              </label>
+              <label class="block">
+                <span class="text-gray-700">VR Deck Expenses</span>
+                <input
+                  type="number"
+                  name="vr_deck"
+                  class="mt-1 block w-full rounded-md custom-input focus:outline-none"
+                  placeholder="VR Deck"
+                  value="0"
+                  min="0"
+                  step="0.01"
+                />
+              </label>
+              <label class="block">
+                <span class="text-gray-700">Cabin</span>
+                <input
+                  type="text"
+                  name="cabin"
+                  class="mt-1 block w-full rounded-md custom-input focus:outline-none"
+                  placeholder="e.g., B/0/P"
+                  required
+                />
+              </label>
+            </div>
+            <div class="mt-6">
+              <button
+                type="submit"
+                class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white custom-button focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cc7b5c"
+              >
+                Predict
+              </button>
+            </div>
+          </form>
+          <div id="result" class="mt-6 text-center"></div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="loading"
+      class="hidden fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center"
+    >
+      <div
+        class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cc7b5c"
+      ></div>
+    </div>
+    <script>
+      document
+        .getElementById('prediction-form')
+        .addEventListener('submit', function (e) {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const data = Object.fromEntries(formData);
+          data.cryo_sleep = data.cryo_sleep === 'true';
+          data.vip = data.vip === 'true';
+          [
+            'age',
+            'room_service',
+            'food_court',
+            'shopping_mall',
+            'spa',
+            'vr_deck',
+          ].forEach((field) => {
+            data[field] = parseFloat(data[field]) || 0;
+          });
+
+          document.getElementById('loading').classList.remove('hidden');
+
+          fetch('/predict', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                return response.json().then((err) => {
+                  throw err;
+                });
+              }
+              return response.json();
+            })
+            .then((result) => {
+              const resultDiv = document.getElementById('result');
+              if (result.error) {
+                resultDiv.innerHTML = `<p class="text-cc7b5c">Error: ${result.error}</p>`;
+                if (result.details) {
+                  console.error('Detailed error:', result.details);
+                }
+              } else {
+                const transported = result.transported
+                  ? 'Transported'
+                  : 'Not Transported';
+                const probability = (
+                  result.transported_probability * 100
+                ).toFixed(2);
+                resultDiv.innerHTML = `
+                        <p class="text-lg font-bold ${
+                          result.transported ? 'text-91a694' : 'text-cc7b5c'
+                        }">
+                            ${transported}</p>
+                        <p class="text-sm text-8b9bae">
+                            Probability: ${probability}%
+                        </p>
+                    `;
+              }
+            })
+            .catch((error) => {
+              console.error('Error:', error);
+              document.getElementById('result').innerHTML =
+                '<p class="text-cc7b5c">An error occurred. Please try again.</p>';
+            })
+            .finally(() => {
+              document.getElementById('loading').classList.add('hidden');
+            });
+        });
+    </script>
+  </body>
+</html>
