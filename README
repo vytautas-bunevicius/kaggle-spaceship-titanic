@@ -113,15 +113,14 @@ The web interface allows users to input passenger information and receive a pred
 5. The interface also displays a feature importance chart to help understand which factors most influence the prediction.
 
 ## UI Screenshot
-![Spaceship Titanic Predictor UI](path/to/your/screenshot.png)
+![Spaceship Titanic Predictor UI](./images/ui_image.png)
 
-*Caption: The Spaceship Titanic Predictor web interface, showing the input form, prediction results, and feature importance chart.*
+*Caption: The Spaceship Titanic Predictor web interface, showing the input form and  prediction results*
 
 ## Improvements and Future Work
 - Collect more data to improve model accuracy
 - Experiment with deep learning models
 - Implement real-time model updating
-- Enhance the UI with more interactive visualizations
 - Optimize the model for faster prediction times
 - Implement user feedback mechanism to continually improve the model
 - Explore additional feature engineering techniques

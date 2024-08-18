@@ -1,8 +1,9 @@
+#cspell:disable
 """Spaceship Titanic Prediction API."""
 
 import logging
 import traceback
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 from flask import Flask, request, jsonify, render_template
 from pydantic import BaseModel, Field
@@ -12,6 +13,9 @@ import numpy as np
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
+
+# Initialize MODEL at the module level
+MODEL = None
 
 class SpaceshipPassenger(BaseModel):
     """Represents a passenger on the Spaceship Titanic."""
@@ -29,17 +33,17 @@ class SpaceshipPassenger(BaseModel):
     vr_deck: int = Field(0, description="Amount spent on VR deck")
     name: str = Field(None, description="Passenger's name")
 
-def detect_anomalies_iqr(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
+def detect_anomalies_iqr(df: pd.DataFrame, features: list) -> pd.DataFrame:
     """Detect anomalies using the Interquartile Range method."""
     anomalies_list = []
 
     for feature in features:
         if feature not in df.columns:
-            logging.warning(f"Feature '{feature}' not found in DataFrame.")
+            logging.warning("Feature '%s' not found in DataFrame.", feature)
             continue
 
         if not np.issubdtype(df[feature].dtype, np.number):
-            logging.warning(f"Feature '{feature}' is not numerical and will be skipped.")
+            logging.warning("Feature '%s' is not numerical and will be skipped.", feature)
             continue
 
         q1 = df[feature].quantile(0.25)
@@ -50,9 +54,9 @@ def detect_anomalies_iqr(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
         feature_anomalies = df[(df[feature] < lower_bound) | (df[feature] > upper_bound)]
 
         if not feature_anomalies.empty:
-            logging.info(f"Anomalies detected in feature '{feature}': {feature_anomalies}")
+            logging.info("Anomalies detected in feature '%s': %s", feature, feature_anomalies)
         else:
-            logging.info(f"No anomalies detected in feature '{feature}'.")
+            logging.info("No anomalies detected in feature '%s'.", feature)
 
         anomalies_list.append(feature_anomalies)
 
@@ -112,7 +116,10 @@ def preprocess_data(passenger: SpaceshipPassenger) -> pd.DataFrame:
     data = engineer_spaceship_features(data)
 
     # Detect anomalies
-    numerical_features = ["Age", "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck", "TotalSpending", "CabinNumber"]
+    numerical_features = [
+        "Age", "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck",
+        "TotalSpending", "CabinNumber"
+    ]
     anomalies = detect_anomalies_iqr(data, numerical_features)
     data["IsAnomaly"] = data.index.isin(anomalies.index).astype(int)
 
@@ -127,13 +134,21 @@ def predict(passenger: SpaceshipPassenger) -> Dict[str, Any]:
     h2o_frame = h2o.H2OFrame(preprocessed_data)
 
     # Ensure all columns from the training data are present
-    model_columns = ['PassengerId', 'HomePlanet', 'CryoSleep', 'Cabin', 'Destination', 'Age', 'VIP', 'RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck', 'Name', 'IsAnomaly', 'TotalSpending', 'CabinDeck', 'CabinNumber', 'CabinSide', 'GroupSize', 'AgeGroup', 'HomePlanetCryoSleep']
+    model_columns = [
+        'PassengerId', 'HomePlanet', 'CryoSleep', 'Cabin', 'Destination', 'Age', 'VIP',
+        'RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck', 'Name', 'IsAnomaly',
+        'TotalSpending', 'CabinDeck', 'CabinNumber', 'CabinSide', 'GroupSize', 'AgeGroup',
+        'HomePlanetCryoSleep'
+    ]
     for col in model_columns:
         if col not in h2o_frame.columns:
             h2o_frame[col] = None
 
     # Convert categorical columns to enum type
-    categorical_columns = ['HomePlanet', 'CryoSleep', 'Cabin', 'Destination', 'VIP', 'IsAnomaly', 'CabinDeck', 'CabinSide', 'AgeGroup', 'HomePlanetCryoSleep']
+    categorical_columns = [
+        'HomePlanet', 'CryoSleep', 'Cabin', 'Destination', 'VIP', 'IsAnomaly',
+        'CabinDeck', 'CabinSide', 'AgeGroup', 'HomePlanetCryoSleep'
+    ]
     for col in categorical_columns:
         h2o_frame[col] = h2o_frame[col].asfactor()
 
@@ -166,7 +181,7 @@ def make_prediction():
         result = predict(passenger)
         logging.debug("Prediction result: %s", result)
         return jsonify(result)
-    except Exception as error:
+    except (ValueError, KeyError, TypeError) as error:
         logging.error("Error during prediction: %s", str(error), exc_info=True)
         return jsonify({"error": str(error), "details": traceback.format_exc()}), 400
 
@@ -174,23 +189,10 @@ def make_prediction():
 def model_info():
     """Get information about the model."""
     try:
-        model_columns = MODEL._model_json['output']['names']
+        model_columns = MODEL.model_json['output']['names']
         return jsonify({"expected_columns": model_columns})
-    except Exception as error:
+    except (AttributeError, KeyError) as error:
         logging.error("Error fetching model info: %s", str(error), exc_info=True)
-        return jsonify({"error": str(error), "details": traceback.format_exc()}), 400
-
-@app.route("/feature-importance", methods=["GET"])
-def feature_importance():
-    """Get feature importance from the model."""
-    try:
-        importance = MODEL.varimp(use_pandas=True)
-        return jsonify({
-            "features": importance['variable'].tolist(),
-            "importance": importance['relative_importance'].tolist()
-        })
-    except Exception as error:
-        logging.error("Error fetching feature importance: %s", str(error), exc_info=True)
         return jsonify({"error": str(error), "details": traceback.format_exc()}), 400
 
 if __name__ == "__main__":

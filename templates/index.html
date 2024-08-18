@@ -8,7 +8,6 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"
       rel="stylesheet"
     />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       body {
         background-color: #eeece2;
@@ -214,13 +213,6 @@
             </div>
           </form>
           <div id="result" class="mt-6 text-center"></div>
-          <div id="probability-bar" class="mt-4 w-full bg-gray-200 rounded-full h-2.5 hidden">
-            <div class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
-          </div>
-          <div id="feature-importance" class="mt-6">
-            <h2 class="text-lg font-semibold mb-2">Feature Importance</h2>
-            <canvas id="importanceChart"></canvas>
-          </div>
         </div>
       </div>
     </div>
@@ -233,34 +225,6 @@
       ></div>
     </div>
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        fetch('/feature-importance')
-          .then(response => response.json())
-          .then(data => {
-            const ctx = document.getElementById('importanceChart').getContext('2d');
-            new Chart(ctx, {
-              type: 'bar',
-              data: {
-                labels: data.features,
-                datasets: [{
-                  label: 'Importance',
-                  data: data.importance,
-                  backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                  borderColor: 'rgba(75, 192, 192, 1)',
-                  borderWidth: 1
-                }]
-              },
-              options: {
-                scales: {
-                  y: {
-                    beginAtZero: true
-                  }
-                }
-              }
-            });
-          });
-      });
-
       document.getElementById('prediction-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -288,41 +252,31 @@
           })
           .then(result => {
             const resultDiv = document.getElementById('result');
-            const probabilityBar = document.getElementById('probability-bar');
             if (result.error) {
               resultDiv.innerHTML = `<p class="text-cc7b5c">Error: ${result.error}</p>`;
-              probabilityBar.classList.add('hidden');
               if (result.details) {
                 console.error('Detailed error:', result.details);
               }
             } else {
-              const transported = result.transported ? 'Transported' : 'Not Transported';
+              const transported = result.transported ? 'transported' : 'not transported';
               const probability = (result.transported_probability * 100).toFixed(2);
-              let interpretation;
+              let chance;
               if (probability < 10) {
-                interpretation = "There is a very low chance that you will be transported.";
+                chance = "very low";
               } else if (probability < 30) {
-                interpretation = "There is a low chance that you will be transported.";
+                chance = "low";
               } else if (probability < 70) {
-                interpretation = "There is a moderate chance that you will be transported.";
+                chance = "moderate";
               } else if (probability < 90) {
-                interpretation = "There is a high chance that you will be transported.";
+                chance = "high";
               } else {
-                interpretation = "There is a very high chance that you will be transported.";
+                chance = "very high";
               }
               resultDiv.innerHTML = `
-                <p class="text-lg font-bold ${result.transported ? 'text-91a694' : 'text-cc7b5c'}">
-                  ${transported}
-                </p>
-                <p class="text-sm text-8b9bae">
-                  Probability: ${probability}%
-                </p>
-                <p class="mt-2 text-md">
-                  ${interpretation}
+                <p class="text-lg ${result.transported ? 'text-91a694' : 'text-cc7b5c'}">
+                  There is a <strong>${chance}</strong> chance that you will be <strong>${transported}</strong>. (${probability}%)
                 </p>
               `;
-              probabilityBar.classList.remove('hidden');
-              probabilityBar.querySelector('div').style.width = `${probability}%`;
             }
           })
           .catch(error => {
