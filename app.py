@@ -1,17 +1,21 @@
+"""Spaceship Titanic Prediction API."""
+
 import logging
 import traceback
+from typing import List, Dict, Any
+
 from flask import Flask, request, jsonify, render_template
 from pydantic import BaseModel, Field
 import h2o
 import pandas as pd
 import numpy as np
-from typing import List
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-# Define the input schema using Pydantic
 class SpaceshipPassenger(BaseModel):
+    """Represents a passenger on the Spaceship Titanic."""
+
     home_planet: str = Field(..., description="Passenger's home planet")
     cryo_sleep: bool = Field(..., description="Whether the passenger was in cryo sleep")
     cabin: str = Field(..., description="Passenger's cabin")
@@ -26,15 +30,16 @@ class SpaceshipPassenger(BaseModel):
     name: str = Field(None, description="Passenger's name")
 
 def detect_anomalies_iqr(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
+    """Detect anomalies using the Interquartile Range method."""
     anomalies_list = []
 
     for feature in features:
         if feature not in df.columns:
-            print(f"Feature '{feature}' not found in DataFrame.")
+            logging.warning(f"Feature '{feature}' not found in DataFrame.")
             continue
 
         if not np.issubdtype(df[feature].dtype, np.number):
-            print(f"Feature '{feature}' is not numerical and will be skipped.")
+            logging.warning(f"Feature '{feature}' is not numerical and will be skipped.")
             continue
 
         q1 = df[feature].quantile(0.25)
@@ -42,27 +47,22 @@ def detect_anomalies_iqr(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
         iqr = q3 - q1
         lower_bound = q1 - 1.5 * iqr
         upper_bound = q3 + 1.5 * iqr
-        feature_anomalies = df[
-            (df[feature] < lower_bound) | (df[feature] > upper_bound)
-        ]
+        feature_anomalies = df[(df[feature] < lower_bound) | (df[feature] > upper_bound)]
 
         if not feature_anomalies.empty:
-            print(f"Anomalies detected in feature '{feature}':")
-            print(feature_anomalies)
+            logging.info(f"Anomalies detected in feature '{feature}': {feature_anomalies}")
         else:
-            print(f"No anomalies detected in feature '{feature}'.")
+            logging.info(f"No anomalies detected in feature '{feature}'.")
 
         anomalies_list.append(feature_anomalies)
 
     if anomalies_list:
         anomalies = pd.concat(anomalies_list).drop_duplicates().reset_index(drop=True)
-        anomalies = anomalies[features]
-    else:
-        anomalies = pd.DataFrame(columns=features)
-
-    return anomalies
+        return anomalies[features]
+    return pd.DataFrame(columns=features)
 
 def engineer_spaceship_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer features for the Spaceship Titanic dataset."""
     df["TotalSpending"] = (
         df["RoomService"]
         + df["FoodCourt"]
@@ -88,10 +88,11 @@ def engineer_spaceship_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def preprocess_data(passenger: SpaceshipPassenger) -> pd.DataFrame:
+    """Preprocess passenger data for prediction."""
     data = pd.DataFrame([passenger.dict()])
 
     # Rename columns to match feature names expected in the data engineering
-    data.rename(columns={
+    column_mapping = {
         "home_planet": "HomePlanet",
         "cryo_sleep": "CryoSleep",
         "destination": "Destination",
@@ -104,7 +105,8 @@ def preprocess_data(passenger: SpaceshipPassenger) -> pd.DataFrame:
         "vr_deck": "VRDeck",
         "cabin": "Cabin",
         "name": "Name"
-    }, inplace=True)
+    }
+    data.rename(columns=column_mapping, inplace=True)
 
     # Perform feature engineering
     data = engineer_spaceship_features(data)
@@ -116,15 +118,17 @@ def preprocess_data(passenger: SpaceshipPassenger) -> pd.DataFrame:
 
     return data
 
-def predict(passenger: SpaceshipPassenger):
+def predict(passenger: SpaceshipPassenger) -> Dict[str, Any]:
+    """Make a prediction for a passenger."""
     preprocessed_data = preprocess_data(passenger)
-    logging.debug(f"Preprocessed data: {preprocessed_data.to_dict(orient='records')}")
+    logging.debug("Preprocessed data: %s", preprocessed_data.to_dict(orient='records'))
 
     # Convert to H2OFrame
     h2o_frame = h2o.H2OFrame(preprocessed_data)
 
     # Ensure all columns from the training data are present
-    for col in ['PassengerId', 'HomePlanet', 'CryoSleep', 'Cabin', 'Destination', 'Age', 'VIP', 'RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck', 'Name', 'IsAnomaly', 'TotalSpending', 'CabinDeck', 'CabinNumber', 'CabinSide', 'GroupSize', 'AgeGroup', 'HomePlanetCryoSleep']:
+    model_columns = ['PassengerId', 'HomePlanet', 'CryoSleep', 'Cabin', 'Destination', 'Age', 'VIP', 'RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck', 'Name', 'IsAnomaly', 'TotalSpending', 'CabinDeck', 'CabinNumber', 'CabinSide', 'GroupSize', 'AgeGroup', 'HomePlanetCryoSleep']
+    for col in model_columns:
         if col not in h2o_frame.columns:
             h2o_frame[col] = None
 
@@ -135,7 +139,7 @@ def predict(passenger: SpaceshipPassenger):
 
     predictions = MODEL.predict(h2o_frame)
 
-    logging.debug(f"Prediction columns: {predictions.columns}")
+    logging.debug("Prediction columns: %s", predictions.columns)
 
     if "predict" in predictions.columns and "True" in predictions.columns:
         transported = bool(predictions["predict"][0, 0])
@@ -150,27 +154,43 @@ def predict(passenger: SpaceshipPassenger):
 
 @app.route("/")
 def home():
+    """Render the home page."""
     return render_template("index.html")
 
 @app.route("/predict", methods=["POST"])
 def make_prediction():
+    """Make a prediction based on input data."""
     try:
-        logging.debug(f"Received data: {request.json}")
+        logging.debug("Received data: %s", request.json)
         passenger = SpaceshipPassenger(**request.json)
         result = predict(passenger)
-        logging.debug(f"Prediction result: {result}")
+        logging.debug("Prediction result: %s", result)
         return jsonify(result)
     except Exception as error:
-        logging.error(f"Error during prediction: {str(error)}", exc_info=True)
+        logging.error("Error during prediction: %s", str(error), exc_info=True)
         return jsonify({"error": str(error), "details": traceback.format_exc()}), 400
 
 @app.route("/model-info", methods=["GET"])
 def model_info():
+    """Get information about the model."""
     try:
         model_columns = MODEL._model_json['output']['names']
         return jsonify({"expected_columns": model_columns})
     except Exception as error:
-        logging.error(f"Error fetching model info: {str(error)}", exc_info=True)
+        logging.error("Error fetching model info: %s", str(error), exc_info=True)
+        return jsonify({"error": str(error), "details": traceback.format_exc()}), 400
+
+@app.route("/feature-importance", methods=["GET"])
+def feature_importance():
+    """Get feature importance from the model."""
+    try:
+        importance = MODEL.varimp(use_pandas=True)
+        return jsonify({
+            "features": importance['variable'].tolist(),
+            "importance": importance['relative_importance'].tolist()
+        })
+    except Exception as error:
+        logging.error("Error fetching feature importance: %s", str(error), exc_info=True)
         return jsonify({"error": str(error), "details": traceback.format_exc()}), 400
 
 if __name__ == "__main__":

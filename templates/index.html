@@ -8,6 +8,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"
       rel="stylesheet"
     />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       body {
         background-color: #eeece2;
@@ -17,15 +18,9 @@
         animation: float 6s ease-in-out infinite;
       }
       @keyframes float {
-        0% {
-          transform: translateY(0px);
-        }
-        50% {
-          transform: translateY(-20px);
-        }
-        100% {
-          transform: translateY(0px);
-        }
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+        100% { transform: translateY(0px); }
       }
       .custom-input {
         background-color: #fafaf7;
@@ -45,13 +40,9 @@
   </head>
   <body class="min-h-screen flex items-center justify-center">
     <div class="container mx-auto px-4">
-      <div
-        class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl"
-      >
+      <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
         <div class="p-8">
-          <div
-            class="uppercase tracking-wide text-sm text-cc7b5c font-semibold mb-1"
-          >
+          <div class="uppercase tracking-wide text-sm text-cc7b5c font-semibold mb-1">
             Predict Your Fate
           </div>
           <h1 class="block mt-1 text-lg leading-tight font-medium text-666663">
@@ -59,11 +50,7 @@
           </h1>
           <div class="mt-4 flex justify-center">
             <div class="spaceship w-24 h-24">
-              <svg
-                viewbox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
+              <svg viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                   d="M12 15.5C14.21 15.5 16 13.71 16 11.5V6C16 3.79 14.21 2 12 2C9.79 2 8 3.79 8 6V11.5C8 13.71 9.79 15.5 12 15.5Z"
                   stroke="#CC7B5C"
@@ -89,7 +76,7 @@
             </div>
           </div>
           <form id="prediction-form" class="mt-6">
-            <div class="grid grid-cols-1 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <label class="block">
                 <span class="text-gray-700">Home Planet</span>
                 <select
@@ -227,6 +214,13 @@
             </div>
           </form>
           <div id="result" class="mt-6 text-center"></div>
+          <div id="probability-bar" class="mt-4 w-full bg-gray-200 rounded-full h-2.5 hidden">
+            <div class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+          </div>
+          <div id="feature-importance" class="mt-6">
+            <h2 class="text-lg font-semibold mb-2">Feature Importance</h2>
+            <canvas id="importanceChart"></canvas>
+          </div>
         </div>
       </div>
     </div>
@@ -239,76 +233,106 @@
       ></div>
     </div>
     <script>
-      document
-        .getElementById('prediction-form')
-        .addEventListener('submit', function (e) {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-          const data = Object.fromEntries(formData);
-          data.cryo_sleep = data.cryo_sleep === 'true';
-          data.vip = data.vip === 'true';
-          [
-            'age',
-            'room_service',
-            'food_court',
-            'shopping_mall',
-            'spa',
-            'vr_deck',
-          ].forEach((field) => {
-            data[field] = parseFloat(data[field]) || 0;
-          });
-
-          document.getElementById('loading').classList.remove('hidden');
-
-          fetch('/predict', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-          })
-            .then((response) => {
-              if (!response.ok) {
-                return response.json().then((err) => {
-                  throw err;
-                });
-              }
-              return response.json();
-            })
-            .then((result) => {
-              const resultDiv = document.getElementById('result');
-              if (result.error) {
-                resultDiv.innerHTML = `<p class="text-cc7b5c">Error: ${result.error}</p>`;
-                if (result.details) {
-                  console.error('Detailed error:', result.details);
+      document.addEventListener('DOMContentLoaded', function() {
+        fetch('/feature-importance')
+          .then(response => response.json())
+          .then(data => {
+            const ctx = document.getElementById('importanceChart').getContext('2d');
+            new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels: data.features,
+                datasets: [{
+                  label: 'Importance',
+                  data: data.importance,
+                  backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                  borderColor: 'rgba(75, 192, 192, 1)',
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                scales: {
+                  y: {
+                    beginAtZero: true
+                  }
                 }
-              } else {
-                const transported = result.transported
-                  ? 'Transported'
-                  : 'Not Transported';
-                const probability = (
-                  result.transported_probability * 100
-                ).toFixed(2);
-                resultDiv.innerHTML = `
-                        <p class="text-lg font-bold ${
-                          result.transported ? 'text-91a694' : 'text-cc7b5c'
-                        }">
-                            ${transported}</p>
-                        <p class="text-sm text-8b9bae">
-                            Probability: ${probability}%
-                        </p>
-                    `;
               }
-            })
-            .catch((error) => {
-              console.error('Error:', error);
-              document.getElementById('result').innerHTML =
-                '<p class="text-cc7b5c">An error occurred. Please try again.</p>';
-            })
-            .finally(() => {
-              document.getElementById('loading').classList.add('hidden');
             });
+          });
+      });
+
+      document.getElementById('prediction-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        data.cryo_sleep = data.cryo_sleep === 'true';
+        data.vip = data.vip === 'true';
+        ['age', 'room_service', 'food_court', 'shopping_mall', 'spa', 'vr_deck'].forEach(field => {
+          data[field] = parseFloat(data[field]) || 0;
         });
+
+        document.getElementById('loading').classList.remove('hidden');
+
+        fetch('/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        })
+          .then(response => {
+            if (!response.ok) {
+              return response.json().then(err => { throw err; });
+            }
+            return response.json();
+          })
+          .then(result => {
+            const resultDiv = document.getElementById('result');
+            const probabilityBar = document.getElementById('probability-bar');
+            if (result.error) {
+              resultDiv.innerHTML = `<p class="text-cc7b5c">Error: ${result.error}</p>`;
+              probabilityBar.classList.add('hidden');
+              if (result.details) {
+                console.error('Detailed error:', result.details);
+              }
+            } else {
+              const transported = result.transported ? 'Transported' : 'Not Transported';
+              const probability = (result.transported_probability * 100).toFixed(2);
+              let interpretation;
+              if (probability < 10) {
+                interpretation = "There is a very low chance that you will be transported.";
+              } else if (probability < 30) {
+                interpretation = "There is a low chance that you will be transported.";
+              } else if (probability < 70) {
+                interpretation = "There is a moderate chance that you will be transported.";
+              } else if (probability < 90) {
+                interpretation = "There is a high chance that you will be transported.";
+              } else {
+                interpretation = "There is a very high chance that you will be transported.";
+              }
+              resultDiv.innerHTML = `
+                <p class="text-lg font-bold ${result.transported ? 'text-91a694' : 'text-cc7b5c'}">
+                  ${transported}
+                </p>
+                <p class="text-sm text-8b9bae">
+                  Probability: ${probability}%
+                </p>
+                <p class="mt-2 text-md">
+                  ${interpretation}
+                </p>
+              `;
+              probabilityBar.classList.remove('hidden');
+              probabilityBar.querySelector('div').style.width = `${probability}%`;
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('result').innerHTML = '<p class="text-cc7b5c">An error occurred. Please try again.</p>';
+          })
+          .finally(() => {
+            document.getElementById('loading').classList.add('hidden');
+          });
+      });
     </script>
   </body>
 </html>
