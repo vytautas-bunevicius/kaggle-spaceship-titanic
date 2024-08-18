@@ -1,3 +1,3 @@
 {
-    "ignorePaths": ["*.ipynb", "cspell.json"]
+    "ignorePaths": ["*.ipynb", "cspell.json", "test_*.py"]
   }
