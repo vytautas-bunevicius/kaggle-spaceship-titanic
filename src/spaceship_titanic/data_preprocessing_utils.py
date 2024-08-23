@@ -204,14 +204,7 @@ def engineer_spaceship_features(df: pd.DataFrame) -> pd.DataFrame:
         - HomePlanet_CryoSleep: Interaction feature between HomePlanet and CryoSleep
         - [FeatureName]_IsMissing: Binary flags indicating missing values for each feature
     """
-    # df = df.copy()  # Create a copy to avoid modifying the original dataframe
 
-    # # Tag missing values
-    # for col in df.columns:
-    #     if df[col].isnull().sum() > 0:
-    #         df[f'{col}_IsMissing'] = df[col].isnull().astype(int)
-
-    # Create TotalSpending feature
     df["TotalSpending"] = (
         df["RoomService"]
         + df["FoodCourt"]
@@ -220,25 +213,21 @@ def engineer_spaceship_features(df: pd.DataFrame) -> pd.DataFrame:
         + df["VRDeck"]
     )
 
-    # Extract Cabin information
     df["CabinDeck"] = df["Cabin"].str[0]
     df["CabinNumber"] = df["Cabin"].str.split("/").str[1].astype(float)
     df["CabinSide"] = df["Cabin"].str[-1]
 
-    # Create GroupSize feature
     df["GroupId"] = df["PassengerId"].str.split("_").str[0]
     group_sizes = df.groupby("GroupId").size()
     df["GroupSize"] = df["GroupId"].map(group_sizes)
-    df.drop("GroupId", axis=1, inplace=True)  # Drop GroupId after using it
+    df.drop("GroupId", axis=1, inplace=True)
 
-    # Bin Age feature
     df["AgeGroup"] = pd.cut(
         df["Age"],
         bins=[0, 18, 65, float("inf")],
         labels=["Child", "Adult", "Senior"],
     )
 
-    # Create interaction features
     df["HomePlanetCryoSleep"] = (
         df["HomePlanet"] + "_" + df["CryoSleep"].astype(str)
     )
@@ -283,7 +272,4 @@ def create_pipeline(preprocessor: Pipeline, model: Pipeline) -> Pipeline:
     Returns:
     sklearn.pipeline.Pipeline: A scikit-learn Pipeline object that sequentially applies the preprocessor and the classifier.
     """
-    return Pipeline([
-        ('preprocessor', preprocessor),
-        ('classifier', model)
-    ])
+    return Pipeline([("preprocessor", preprocessor), ("classifier", model)])

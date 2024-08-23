@@ -66,7 +66,6 @@ def evaluate_model(
         threshold = thresholds[idx]
         print(f"Adjusted threshold: {threshold:.4f}")
 
-    # Use the threshold if provided or adjusted, otherwise use default 0.5
     if threshold is not None:
         y_pred = (y_pred_proba >= threshold).astype(int)
     else:
@@ -75,9 +74,7 @@ def evaluate_model(
     if dataset_name:
         print(f"\nResults on {dataset_name} set:")
 
-    print(
-        classification_report(true_labels, y_pred, zero_division=1)
-    )  # Modified line
+    print(classification_report(true_labels, y_pred, zero_division=1))
     print("Confusion Matrix:")
     print(confusion_matrix(true_labels, y_pred))
     print(f"ROC AUC: {roc_auc_score(true_labels, y_pred_proba):.4f}")
@@ -121,7 +118,7 @@ def extract_feature_importances(
     if hasattr(model, "feature_importances_"):
         return model.feature_importances_
     else:
-        # Calculate permutation importance
+
         permutation_import = permutation_importance(
             model, feature_data, target_data, n_repeats=30, random_state=42
         )

@@ -339,7 +339,6 @@ def plot_combined_confusion_matrices(
             title_standoff=25,
         )
 
-    # Adjust layout based on number of models
     height = 600 if n_models <= 2 else 1000
     width = 1200
 
@@ -356,7 +355,6 @@ def plot_combined_confusion_matrices(
         margin=dict(t=100, b=50, l=50, r=50),
     )
 
-    # Adjust subplot titles
     for i in fig["layout"]["annotations"]:
         i["font"] = dict(size=16, family="Styrene B", color="#191919")
         i["y"] = i["y"] + 0.03

@@ -484,7 +484,6 @@ def plot_categorical_features_by_target(
         None. The function displays the plot and optionally saves it to a file.
     """
     num_features = len(features)
-    # Determine the number of rows and columns based on the number of features
     if num_features == 1:
         rows, cols = 1, 1
     elif num_features == 2:
@@ -499,7 +498,6 @@ def plot_categorical_features_by_target(
         cols=cols,
         vertical_spacing=0.2,
         horizontal_spacing=0.1,
-        # Removed subplot_titles to prevent feature names from appearing at the top
     )
 
     axis_font = {"family": "Styrene A", "color": "#191919"}
@@ -680,8 +678,8 @@ def plot_numeric_distributions(
         showlegend=True,
         legend=dict(
             orientation="v",
-            yanchor="middle",  # Changed from "top" to "middle"
-            y=0.5,  # Changed from 1 to 0.5 for vertical center
+            yanchor="middle",
+            y=0.5,
             xanchor="left",
             x=1.02,
             bgcolor="rgba(255,255,255,0.8)",
@@ -727,7 +725,7 @@ def plot_single_bar_chart(
 
     value_counts = df[feature].value_counts(normalize=True).reset_index()
     value_counts.columns = [feature, "percentage"]
-    value_counts["percentage"] *= 100  # Convert to percentage
+    value_counts["percentage"] *= 100
 
     fig = go.Figure()
 
@@ -738,10 +736,10 @@ def plot_single_bar_chart(
             go.Bar(
                 x=[value],
                 y=[percentage],
-                name=f"{feature} = {value}",  # Updated legend label
+                name=f"{feature} = {value}",
                 marker_color=PRIMARY_COLORS[
                     i % 2
-                ],  # Alternate between first two colors
+                ],
                 text=[f"{percentage:.1f}%"],
                 textposition="auto",
             )
@@ -761,7 +759,7 @@ def plot_single_bar_chart(
         title_text="Percentage",
         title_font={**axis_font, "size": 14},
         tickfont={**axis_font, "size": 12},
-        range=[0, 100],  # Set y-axis range from 0 to 100
+        range=[0, 100],
     )
 
     fig.update_layout(
