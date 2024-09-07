@@ -37,7 +37,6 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 
-# Constants
 BACKGROUND_COLOR = "#EEECE2"
 PRIMARY_COLORS = ["#CC7B5C", "#D4A27F", "#EBDBBC", "#9C8AA5"]
 PLOT_COLORS = ["#91A694", "#9C8AA5", "#CC7B5C"]
@@ -97,7 +96,7 @@ def shap_summary_plot(
             text="SHAP Feature Importance",
             x=0.5,
             xanchor="center",
-            font=dict(family="Styrene B", size=20, color="#191919")
+            font=dict(family="Styrene B", size=20, color="#191919"),
         ),
     )
 
@@ -405,7 +404,7 @@ def plot_roc_curve(
         plot_bgcolor=BACKGROUND_COLOR,
         paper_bgcolor=BACKGROUND_COLOR,
         width=1200,
-        height=500
+        height=500,
     )
     fig.show()
     if save_path:
@@ -443,7 +442,7 @@ def plot_precision_recall_curve(
         plot_bgcolor=BACKGROUND_COLOR,
         paper_bgcolor=BACKGROUND_COLOR,
         width=1200,
-        height=500
+        height=500,
     )
     fig.show()
     if save_path:
@@ -491,16 +490,18 @@ def plot_confusion_matrix(
         [1, PRIMARY_COLORS[0]],
     ]
 
-    fig = go.Figure(data=go.Heatmap(
-        z=cm,
-        x=labels or ["Not Transported", "Transported"],
-        y=labels or ["Not Transported", "Transported"],
-        hoverongaps=False,
-        text=text,
-        texttemplate="%{text}",
-        colorscale=colorscale,
-        showscale=False,
-    ))
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=cm,
+            x=labels or ["Not Transported", "Transported"],
+            y=labels or ["Not Transported", "Transported"],
+            hoverongaps=False,
+            text=text,
+            texttemplate="%{text}",
+            colorscale=colorscale,
+            showscale=False,
+        )
+    )
 
     axis_font = {"family": "Styrene A", "color": "#191919"}
 
@@ -585,7 +586,7 @@ def plot_learning_curve(
         plot_bgcolor=BACKGROUND_COLOR,
         paper_bgcolor=BACKGROUND_COLOR,
         width=1200,
-        height=500
+        height=500,
     )
     fig.show()
     if save_path:
