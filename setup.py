@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='spaceship_titanic',
-    version='0.1',
+    name="spaceship_titanic",
+    version="0.1",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
 )
